@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Advanced Multi Stream</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+
+    body{
+      background:#111;
+      color:white;
+      font-family:Arial,sans-serif;
+      margin:0;
+      height:100vh;
+      overflow:hidden;
+    }
+
+    /* 🌙 LIGHT MODE */
+    .light{
+      background:#f5f5f5;
+      color:#111;
+    }
+
+    .light .card{
+      background:#fff;
+    }
+
+    .light .top-bar{
+      background:#fff;
+      color:#111;
+    }
+
+    .light .footer{
+      background:#ddd;
+      color:#111;
+    }
+
+    /* 🔥 TOP BAR */
+    .top-bar{
+      background:#000;
+      padding:12px;
+      text-align:center;
+    }
+
+    input{
+      padding:10px;
+      width:60%;
+      border:none;
+      border-radius:6px;
+      outline:none;
+    }
+
+    button{
+      cursor:pointer;
+    }
+
+    /* 🎛 GLOBAL BUTTONS */
+    .top-controls{
+      position:fixed;
+      top:15px;
+      right:15px;
+      z-index:9999999;
+
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .top-controls button{
+      background:red;
+      color:white;
+      border:none;
+      padding:8px 14px;
+      border-radius:6px;
+      font-weight:bold;
+    }
+
+    /* 🔥 RIGHT PANEL */
+    .menu-panel{
+      position:fixed;
+      top:70px;
+      right:15px;
+      z-index:9999999;
+
+      display:flex;
+
+      flex-direction:row;
+
+      align-items:flex-start;
+
+      gap:10px;
+    }
+
+    .menu-panel button{
+      background:#222;
+      color:white;
+      border:none;
+      padding:8px 14px;
+      border-radius:6px;
+      font-weight:bold;
+    }
+
+    .dropdown-menu{
+      display:none;
+      flex-direction:column;
+      gap:8px;
+      margin-top:5px;
+      align-items:flex-start;
+    }
+
+    .dropdown-menu button{
+      background:#444;
+      width:100%;
+    }
+
+    /* 🎥 GRID */
+    .grid{
+      display:grid;
+      gap:6px;
+      padding:6px;
+      height:calc(100vh - 140px);
+      transition:0.3s;
+    }
+
+    .card{
+      background:#1c1c1c;
+      border-radius:10px;
+      overflow:hidden;
+      position:relative;
+      min-height:240px;
+    }
+
+    .player{
+      width:100%;
+      height:100%;
+    }
+
+    iframe{
+      width:100% !important;
+      height:100% !important;
+      border:none;
+    }
+
+    /* 🎛 STREAM CONTROLS */
+    .controls{
+      position:absolute;
+      top:5px;
+      left:5px;
+      z-index:99999;
+
+      display:flex;
+      gap:4px;
+      flex-wrap:wrap;
+
+      opacity:0;
+      transition:0.3s;
+    }
+
+    .card:hover .controls{
+      opacity:1;
+    }
+
+    .controls button{
+      background:red;
+      color:white;
+      border:none;
+      padding:4px 8px;
+      border-radius:4px;
+      font-size:12px;
+    }
+
+    .volume-slider{
+      width:70px;
+    }
+
+    .favorite{
+      background:gold !important;
+      color:black !important;
+    }
+
+    .footer{
+      position:fixed;
+      bottom:0;
+      width:100%;
+      text-align:center;
+      background:#000;
+      color:#00ff88;
+      padding:6px;
+      font-size:12px;
+    }
+
+    /* 📱 MOBILE */
+    @media(max-width:600px){
+
+      input{
+        width:90%;
+      }
+
+      .top-controls{
+        top:auto;
+        bottom:15px;
+        right:10px;
+      }
+
+      .menu-panel{
+        top:auto;
+        bottom:70px;
+        right:10px;
+      }
+
+      .controls{
+        opacity:1;
+      }
+
+    }
+
+  </style>
+</head>
+
+<body>
+
+<!-- 🔥 TOP -->
+<div class="top-bar">
+
+  <h2>🔥 Advanced Multi Stream</h2>
+
+  <input id="link" placeholder="Paste YouTube link">
+
+  <button onclick="addStream()">Add</button>
+
+  <h3>
+    🟢 Online:
+    <span id="viewerCount">0</span>
+  </h3>
+
+</div>
+
+<!-- 🎛 GLOBAL -->
+<div class="top-controls">
+
+  <button onclick="playAll()">
+    ▶ Play
+  </button>
+
+  <button onclick="pauseAll()">
+    ⏸ Pause
+  </button>
+
+  <button onclick="muteAll()">
+    🔇 Mute
+  </button>
+
+  <button onclick="unmuteAll()">
+    🔊 Unmute
+  </button>
+
+  <button onclick="toggleTheme()">
+    🌙 Theme
+  </button>
+
+</div>
+
+<!-- 🔥 SIDE PANEL -->
+<div class="menu-panel">
+
+  <!-- 🟦 GRID -->
+  <div>
+
+    <button onclick="toggleGridMenu()">
+      🟦 Grid
+    </button>
+
+    <div id="gridMenu" class="dropdown-menu">
+
+      <button onclick="setGridMode(1)">
+        1×1
+      </button>
+
+      <button onclick="setGridMode(4)">
+        2×2
+      </button>
+
+      <button onclick="setGridMode(9)">
+        3×3
+      </button>
+
+      <button onclick="enableAutoGrid()">
+        Auto
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- ⚙ SETTINGS -->
+  <div>
+
+    <button onclick="toggleSettingsMenu()">
+      ⚙ Settings
+    </button>
+
+    <div id="settingsMenu" class="dropdown-menu">
+
+      <button onclick="setGlobalQuality('default')">
+        Auto Quality
+      </button>
+
+      <button onclick="setGlobalQuality('small')">
+        144p
+      </button>
+
+      <button onclick="setGlobalQuality('medium')">
+        360p
+      </button>
+
+      <button onclick="setGlobalQuality('large')">
+        480p
+      </button>
+
+      <button onclick="setGlobalQuality('hd720')">
+        720p
+      </button>
+
+      <button onclick="setGlobalQuality('hd1080')">
+        1080p
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- 🎥 GRID -->
+<div class="grid" id="grid"></div>
+
+<div class="footer">
+  Developed by Amal Joshy
+</div>
+
+<!-- 🔥 FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<!-- 🔥 YOUTUBE -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<!-- 🔥 SORTABLE -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+
+const firebaseConfig = {
+
+  apiKey: "AIzaSyBTPrDoxWQdEWLLHsUuJbv4cQX1vUd6lQY",
+
+  authDomain: "multi-stream-ddb1d.firebaseapp.com",
+
+  databaseURL: "https://multi-stream-ddb1d-default-rtdb.firebaseio.com",
+
+  projectId: "multi-stream-ddb1d",
+
+  appId: "1:305282777189:web:50adf19c4bbb1c8005c68c"
+
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.database();
+
+let apiReady = false;
+
+function onYouTubeIframeAPIReady(){
+
+  apiReady = true;
+
+}
+
+let players = {};
+
+let manualGridEnabled = false;
+
+let maxVisibleStreams = 9;
+
+/* 👤 USERS */
+
+const userId =
+  Math.random().toString(36).substring(2);
+
+const userRef =
+  db.ref("users/" + userId);
+
+db.ref(".info/connected").on("value", snap => {
+
+  if(snap.val()){
+
+    userRef.set(true);
+
+    userRef.onDisconnect().remove();
+
+  }
+
+});
+
+/* 🟢 VIEWERS */
+
+db.ref("users").on("value", snap => {
+
+  document.getElementById("viewerCount")
+    .innerText = snap.numChildren();
+
+});
+
+/* 🎥 LOAD STREAMS */
+
+db.ref("streams").on("value", snap => {
+
+  const grid =
+    document.getElementById("grid");
+
+  Object.values(players).forEach(player => {
+
+    if(player.destroy){
+
+      player.destroy();
+
+    }
+
+  });
+
+  players = {};
+
+  grid.innerHTML = "";
+
+  if(!manualGridEnabled){
+
+    updateGrid(snap.numChildren());
+
+  }
+
+  snap.forEach(child => {
+
+    createPlayer(child.val(), child.key);
+
+  });
+
+  applyVisibility();
+
+});
+
+/* ➕ ADD */
+
+function addStream(){
+
+  let url =
+    document.getElementById("link").value.trim();
+
+  let id = getId(url);
+
+  if(!id){
+
+    alert("Invalid YouTube Link");
+
+    return;
+
+  }
+
+  db.ref("streams").once("value", snap => {
+
+    if(snap.numChildren() >= 9){
+
+      alert("Maximum 9 streams");
+
+      return;
+
+    }
+
+    db.ref("streams").push(id);
+
+    document.getElementById("link").value = "";
+
+  });
+
+}
+
+/* 🎬 PLAYER */
+
+function createPlayer(id,key){
+
+  if(!apiReady){
+
+    setTimeout(() => {
+
+      createPlayer(id,key);
+
+    },500);
+
+    return;
+
+  }
+
+  const grid =
+    document.getElementById("grid");
+
+  let div =
+    document.createElement("div");
+
+  div.className = "card";
+
+  let playerDiv =
+    document.createElement("div");
+
+  playerDiv.className = "player";
+
+  playerDiv.id = "player-" + key;
+
+  div.appendChild(playerDiv);
+
+  /* 🎛 CONTROLS */
+
+  let controls =
+    document.createElement("div");
+
+  controls.className = "controls";
+
+  /* 🔊 VOLUME */
+
+  let volume =
+    document.createElement("input");
+
+  volume.type = "range";
+
+  volume.min = 0;
+
+  volume.max = 100;
+
+  volume.value = 100;
+
+  volume.className = "volume-slider";
+
+  volume.oninput = () => {
+
+    if(players[key]){
+
+      players[key].setVolume(volume.value);
+
+    }
+
+  };
+
+  controls.appendChild(volume);
+
+  /* ⛶ FULLSCREEN */
+
+  let fullBtn =
+    document.createElement("button");
+
+  fullBtn.innerText = "⛶";
+
+  fullBtn.onclick = () => {
+
+    div.requestFullscreen();
+
+  };
+
+  controls.appendChild(fullBtn);
+
+  /* ⭐ FAVORITE */
+
+  let favBtn =
+    document.createElement("button");
+
+  favBtn.innerText = "⭐";
+
+  favBtn.onclick = () => {
+
+    favBtn.classList.toggle("favorite");
+
+  };
+
+  controls.appendChild(favBtn);
+
+  /* ❌ DELETE */
+
+  let delBtn =
+    document.createElement("button");
+
+  delBtn.innerText = "X";
+
+  delBtn.onclick = () => {
+
+    db.ref("streams/" + key).remove();
+
+  };
+
+  controls.appendChild(delBtn);
+
+  div.appendChild(controls);
+
+  grid.appendChild(div);
+
+  /* 🔥 YOUTUBE */
+
+  players[key] =
+    new YT.Player(playerDiv.id, {
+
+      width:"100%",
+
+      height:"100%",
+
+      videoId:id,
+
+      playerVars:{
+
+        autoplay:1,
+
+        mute:1,
+
+        controls:1,
+
+        playsinline:1,
+
+        enablejsapi:1
+
+      },
+
+      events:{
+
+        onReady:function(event){
+
+          event.target.playVideo();
+
+        }
+
+      }
+
+    });
+
+}
+
+/* ▶ PLAY */
+
+function playAll(){
+
+  Object.values(players).forEach(player => {
+
+    try{
+
+      player.playVideo();
+
+    }catch(err){}
+
+  });
+
+}
+
+/* ⏸ PAUSE */
+
+function pauseAll(){
+
+  Object.values(players).forEach(player => {
+
+    try{
+
+      player.pauseVideo();
+
+    }catch(err){}
+
+  });
+
+}
+
+/* 🔇 MUTE */
+
+function muteAll(){
+
+  Object.values(players).forEach(player => {
+
+    try{
+
+      player.mute();
+
+    }catch(err){}
+
+  });
+
+}
+
+/* 🔊 UNMUTE */
+
+function unmuteAll(){
+
+  Object.values(players).forEach(player => {
+
+    try{
+
+      player.unMute();
+
+    }catch(err){}
+
+  });
+
+}
+
+/* 🌙 THEME */
+
+function toggleTheme(){
+
+  document.body.classList.toggle("light");
+
+}
+
+/* 🟦 GRID MENU */
+
+function toggleGridMenu(){
+
+  const menu =
+    document.getElementById("gridMenu");
+
+  menu.style.display =
+    menu.style.display === "flex"
+      ? "none"
+      : "flex";
+
+}
+
+/* ⚙ SETTINGS */
+
+function toggleSettingsMenu(){
+
+  const menu =
+    document.getElementById("settingsMenu");
+
+  menu.style.display =
+    menu.style.display === "flex"
+      ? "none"
+      : "flex";
+
+}
+
+/* 🔥 SMART GRID */
+
+function updateGrid(count){
+
+  const grid =
+    document.getElementById("grid");
+
+  if(count === 1){
+
+    grid.style.gridTemplateColumns =
+      "1fr";
+
+  }
+
+  else if(count <= 4){
+
+    grid.style.gridTemplateColumns =
+      "repeat(2,1fr)";
+
+  }
+
+  else{
+
+    grid.style.gridTemplateColumns =
+      "repeat(3,1fr)";
+
+  }
+
+}
+
+/* 🎛 GRID MODE */
+
+function setGridMode(limit){
+
+  manualGridEnabled = true;
+
+  maxVisibleStreams = limit;
+
+  const grid =
+    document.getElementById("grid");
+
+  if(limit === 1){
+
+    grid.style.gridTemplateColumns =
+      "1fr";
+
+  }
+
+  else if(limit === 4){
+
+    grid.style.gridTemplateColumns =
+      "repeat(2,1fr)";
+
+  }
+
+  else{
+
+    grid.style.gridTemplateColumns =
+      "repeat(3,1fr)";
+
+  }
+
+  applyVisibility();
+
+}
+
+/* 🔄 AUTO */
+
+function enableAutoGrid(){
+
+  manualGridEnabled = false;
+
+  maxVisibleStreams = 9;
+
+  updateGrid(
+    document.querySelectorAll(".card").length
+  );
+
+  applyVisibility();
+
+}
+
+/* 👁 VISIBILITY */
+
+function applyVisibility(){
+
+  const cards =
+    document.querySelectorAll(".card");
+
+  cards.forEach((card,index) => {
+
+    card.style.display =
+      index < maxVisibleStreams
+        ? "block"
+        : "none";
+
+  });
+
+}
+
+/* ⚙ QUALITY */
+
+function setGlobalQuality(quality){
+
+  Object.values(players).forEach(player => {
+
+    try{
+
+      player.setPlaybackQuality(quality);
+
+    }catch(err){}
+
+  });
+
+}
+
+/* 🔗 GET ID */
+
+function getId(url){
+
+  let r =
+    /(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/|embed\/)|youtu\.be\/)([^?&#]+)/;
+
+  let m = url.match(r);
+
+  return m ? m[1] : null;
+
+}
+
+/* 🔥 DRAG DROP */
+
+new Sortable(
+  document.getElementById("grid"),
+  {
+    animation:150
+  }
+);
+
+</script>
+
+</body>
+</html>
