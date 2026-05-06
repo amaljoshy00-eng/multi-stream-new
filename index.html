@@ -12,8 +12,9 @@
       color:white;
       font-family:Arial,sans-serif;
       margin:0;
-      height:100vh;
-      overflow:hidden;
+      min-height:100vh;
+      overflow-x:hidden;
+      overflow-y:auto;
     }
 
     .light{
@@ -105,6 +106,12 @@
     .dropdown-menu button{
       background:#444;
       width:100%;
+    }
+
+    /* ✅ ACTIVE QUALITY BUTTON */
+    .active-quality{
+      background:#00c853 !important;
+      color:white !important;
     }
 
     .grid{
@@ -725,6 +732,16 @@ function applyVisibility(){
 /* ⚙ GLOBAL QUALITY */
 
 function setGlobalQuality(quality){
+
+  document
+    .querySelectorAll("#settingsMenu button")
+    .forEach(btn => {
+
+      btn.classList.remove("active-quality");
+
+    });
+
+  event.target.classList.add("active-quality");
 
   Object.values(players).forEach(player => {
 
