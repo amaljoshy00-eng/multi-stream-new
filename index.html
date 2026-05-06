@@ -16,7 +16,6 @@
       overflow:hidden;
     }
 
-    /* 🌙 LIGHT MODE */
     .light{
       background:#f5f5f5;
       color:#111;
@@ -36,7 +35,6 @@
       color:#111;
     }
 
-    /* 🔥 TOP BAR */
     .top-bar{
       background:#000;
       padding:12px;
@@ -55,7 +53,6 @@
       cursor:pointer;
     }
 
-    /* 🎛 GLOBAL BUTTONS */
     .top-controls{
       position:fixed;
       top:15px;
@@ -76,7 +73,6 @@
       font-weight:bold;
     }
 
-    /* 🔥 RIGHT PANEL */
     .menu-panel{
       position:fixed;
       top:70px;
@@ -84,11 +80,8 @@
       z-index:9999999;
 
       display:flex;
-
       flex-direction:row;
-
       align-items:flex-start;
-
       gap:10px;
     }
 
@@ -114,7 +107,6 @@
       width:100%;
     }
 
-    /* 🎥 GRID */
     .grid{
       display:grid;
       gap:6px;
@@ -142,7 +134,6 @@
       border:none;
     }
 
-    /* 🎛 STREAM CONTROLS */
     .controls{
       position:absolute;
       top:5px;
@@ -190,7 +181,6 @@
       font-size:12px;
     }
 
-    /* 📱 MOBILE */
     @media(max-width:600px){
 
       input{
@@ -220,7 +210,6 @@
 
 <body>
 
-<!-- 🔥 TOP -->
 <div class="top-bar">
 
   <h2>🔥 Advanced Multi Stream</h2>
@@ -236,35 +225,22 @@
 
 </div>
 
-<!-- 🎛 GLOBAL -->
 <div class="top-controls">
 
-  <button onclick="playAll()">
-    ▶ Play
-  </button>
+  <button onclick="playAll()">▶ Play</button>
 
-  <button onclick="pauseAll()">
-    ⏸ Pause
-  </button>
+  <button onclick="pauseAll()">⏸ Pause</button>
 
-  <button onclick="muteAll()">
-    🔇 Mute
-  </button>
+  <button onclick="muteAll()">🔇 Mute</button>
 
-  <button onclick="unmuteAll()">
-    🔊 Unmute
-  </button>
+  <button onclick="unmuteAll()">🔊 Unmute</button>
 
-  <button onclick="toggleTheme()">
-    🌙 Theme
-  </button>
+  <button onclick="toggleTheme()">🌙 Theme</button>
 
 </div>
 
-<!-- 🔥 SIDE PANEL -->
 <div class="menu-panel">
 
-  <!-- 🟦 GRID -->
   <div>
 
     <button onclick="toggleGridMenu()">
@@ -273,28 +249,18 @@
 
     <div id="gridMenu" class="dropdown-menu">
 
-      <button onclick="setGridMode(1)">
-        1×1
-      </button>
+      <button onclick="setGridMode(1)">1×1</button>
 
-      <button onclick="setGridMode(4)">
-        2×2
-      </button>
+      <button onclick="setGridMode(4)">2×2</button>
 
-      <button onclick="setGridMode(9)">
-        3×3
-      </button>
+      <button onclick="setGridMode(9)">3×3</button>
 
-      <button onclick="enableAutoGrid()">
-        Auto
-      </button>
+      <button onclick="enableAutoGrid()">Auto</button>
 
     </div>
 
   </div>
 
-
-  <!-- ⚙ SETTINGS -->
   <div>
 
     <button onclick="toggleSettingsMenu()">
@@ -333,21 +299,17 @@
 
 </div>
 
-<!-- 🎥 GRID -->
 <div class="grid" id="grid"></div>
 
 <div class="footer">
-  Developed by Amal Joshy
+  Developed by Amal Joshy🔥
 </div>
 
-<!-- 🔥 FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-<!-- 🔥 YOUTUBE -->
 <script src="https://www.youtube.com/iframe_api"></script>
 
-<!-- 🔥 SORTABLE -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 <script>
@@ -373,9 +335,7 @@ const db = firebase.database();
 let apiReady = false;
 
 function onYouTubeIframeAPIReady(){
-
   apiReady = true;
-
 }
 
 let players = {};
@@ -383,8 +343,6 @@ let players = {};
 let manualGridEnabled = false;
 
 let maxVisibleStreams = 9;
-
-/* 👤 USERS */
 
 const userId =
   Math.random().toString(36).substring(2);
@@ -404,16 +362,12 @@ db.ref(".info/connected").on("value", snap => {
 
 });
 
-/* 🟢 VIEWERS */
-
 db.ref("users").on("value", snap => {
 
   document.getElementById("viewerCount")
     .innerText = snap.numChildren();
 
 });
-
-/* 🎥 LOAD STREAMS */
 
 db.ref("streams").on("value", snap => {
 
@@ -423,9 +377,7 @@ db.ref("streams").on("value", snap => {
   Object.values(players).forEach(player => {
 
     if(player.destroy){
-
       player.destroy();
-
     }
 
   });
@@ -435,9 +387,7 @@ db.ref("streams").on("value", snap => {
   grid.innerHTML = "";
 
   if(!manualGridEnabled){
-
     updateGrid(snap.numChildren());
-
   }
 
   snap.forEach(child => {
@@ -449,8 +399,6 @@ db.ref("streams").on("value", snap => {
   applyVisibility();
 
 });
-
-/* ➕ ADD */
 
 function addStream(){
 
@@ -485,8 +433,6 @@ function addStream(){
 
 }
 
-/* 🎬 PLAYER */
-
 function createPlayer(id,key){
 
   if(!apiReady){
@@ -518,14 +464,10 @@ function createPlayer(id,key){
 
   div.appendChild(playerDiv);
 
-  /* 🎛 CONTROLS */
-
   let controls =
     document.createElement("div");
 
   controls.className = "controls";
-
-  /* 🔊 VOLUME */
 
   let volume =
     document.createElement("input");
@@ -543,16 +485,12 @@ function createPlayer(id,key){
   volume.oninput = () => {
 
     if(players[key]){
-
       players[key].setVolume(volume.value);
-
     }
 
   };
 
   controls.appendChild(volume);
-
-  /* ⛶ FULLSCREEN */
 
   let fullBtn =
     document.createElement("button");
@@ -560,14 +498,10 @@ function createPlayer(id,key){
   fullBtn.innerText = "⛶";
 
   fullBtn.onclick = () => {
-
     div.requestFullscreen();
-
   };
 
   controls.appendChild(fullBtn);
-
-  /* ⭐ FAVORITE */
 
   let favBtn =
     document.createElement("button");
@@ -575,14 +509,10 @@ function createPlayer(id,key){
   favBtn.innerText = "⭐";
 
   favBtn.onclick = () => {
-
     favBtn.classList.toggle("favorite");
-
   };
 
   controls.appendChild(favBtn);
-
-  /* ❌ DELETE */
 
   let delBtn =
     document.createElement("button");
@@ -590,9 +520,7 @@ function createPlayer(id,key){
   delBtn.innerText = "X";
 
   delBtn.onclick = () => {
-
     db.ref("streams/" + key).remove();
-
   };
 
   controls.appendChild(delBtn);
@@ -601,37 +529,25 @@ function createPlayer(id,key){
 
   grid.appendChild(div);
 
-  /* 🔥 YOUTUBE */
-
   players[key] =
     new YT.Player(playerDiv.id, {
 
       width:"100%",
-
       height:"100%",
-
       videoId:id,
 
       playerVars:{
-
         autoplay:1,
-
         mute:1,
-
         controls:1,
-
         playsinline:1,
-
         enablejsapi:1
-
       },
 
       events:{
 
         onReady:function(event){
-
           event.target.playVideo();
-
         }
 
       }
@@ -640,79 +556,57 @@ function createPlayer(id,key){
 
 }
 
-/* ▶ PLAY */
-
 function playAll(){
 
   Object.values(players).forEach(player => {
 
     try{
-
       player.playVideo();
-
     }catch(err){}
 
   });
 
 }
-
-/* ⏸ PAUSE */
 
 function pauseAll(){
 
   Object.values(players).forEach(player => {
 
     try{
-
       player.pauseVideo();
-
     }catch(err){}
 
   });
 
 }
-
-/* 🔇 MUTE */
 
 function muteAll(){
 
   Object.values(players).forEach(player => {
 
     try{
-
       player.mute();
-
     }catch(err){}
 
   });
 
 }
-
-/* 🔊 UNMUTE */
 
 function unmuteAll(){
 
   Object.values(players).forEach(player => {
 
     try{
-
       player.unMute();
-
     }catch(err){}
 
   });
 
 }
 
-/* 🌙 THEME */
-
 function toggleTheme(){
-
   document.body.classList.toggle("light");
-
 }
-
-/* 🟦 GRID MENU */
 
 function toggleGridMenu(){
 
@@ -726,8 +620,6 @@ function toggleGridMenu(){
 
 }
 
-/* ⚙ SETTINGS */
-
 function toggleSettingsMenu(){
 
   const menu =
@@ -740,8 +632,6 @@ function toggleSettingsMenu(){
 
 }
 
-/* 🔥 SMART GRID */
-
 function updateGrid(count){
 
   const grid =
@@ -749,8 +639,7 @@ function updateGrid(count){
 
   if(count === 1){
 
-    grid.style.gridTemplateColumns =
-      "1fr";
+    grid.style.gridTemplateColumns = "1fr";
 
   }
 
@@ -770,8 +659,6 @@ function updateGrid(count){
 
 }
 
-/* 🎛 GRID MODE */
-
 function setGridMode(limit){
 
   manualGridEnabled = true;
@@ -783,8 +670,7 @@ function setGridMode(limit){
 
   if(limit === 1){
 
-    grid.style.gridTemplateColumns =
-      "1fr";
+    grid.style.gridTemplateColumns = "1fr";
 
   }
 
@@ -806,8 +692,6 @@ function setGridMode(limit){
 
 }
 
-/* 🔄 AUTO */
-
 function enableAutoGrid(){
 
   manualGridEnabled = false;
@@ -821,8 +705,6 @@ function enableAutoGrid(){
   applyVisibility();
 
 }
-
-/* 👁 VISIBILITY */
 
 function applyVisibility(){
 
@@ -840,7 +722,7 @@ function applyVisibility(){
 
 }
 
-/* ⚙ QUALITY */
+/* ⚙ GLOBAL QUALITY */
 
 function setGlobalQuality(quality){
 
@@ -848,15 +730,24 @@ function setGlobalQuality(quality){
 
     try{
 
+      player.setPlaybackQualityRange(
+        quality,
+        quality
+      );
+
       player.setPlaybackQuality(quality);
 
-    }catch(err){}
+      player.playVideo();
+
+    }catch(err){
+
+      console.log(err);
+
+    }
 
   });
 
 }
-
-/* 🔗 GET ID */
 
 function getId(url){
 
@@ -868,8 +759,6 @@ function getId(url){
   return m ? m[1] : null;
 
 }
-
-/* 🔥 DRAG DROP */
 
 new Sortable(
   document.getElementById("grid"),
