@@ -813,6 +813,29 @@ new Sortable(
   }
 );
 
+// Floating Home Button
+
+const backBtn = document.createElement("button");
+
+backBtn.innerText = "⬅ Home";
+
+backBtn.style.position = "fixed";
+backBtn.style.top = "15px";
+backBtn.style.left = "15px";
+backBtn.style.zIndex = "999999";
+backBtn.style.background = "red";
+backBtn.style.color = "white";
+backBtn.style.border = "none";
+backBtn.style.padding = "10px";
+backBtn.style.borderRadius = "8px";
+backBtn.style.cursor = "pointer";
+
+backBtn.onclick = () => {
+  location.href = "index.html";
+};
+
+document.body.appendChild(backBtn);
+
 </script>
 
 </body>
