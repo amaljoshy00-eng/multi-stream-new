@@ -1,1 +1,143 @@
+    position: fixed !important;
+    top: 10px !important;
+    left: 8px !important;
+    right: auto !important;
+    z-index: 10000001 !important;
+    padding: 8px 10px !important;
+    min-height: 36px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  /* Global player buttons stay in the top-right, never at the bottom. */
+  .top-controls {
+    position: fixed !important;
+    top: 8px !important;
+    right: 8px !important;
+    bottom: auto !important;
+    left: 94px !important;
+    z-index: 10000000 !important;
+    display: flex !important;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-content: flex-start;
+    gap: 5px !important;
+    max-height: 52px;
+    overflow: hidden;
+  }
+
+  .top-controls button {
+    min-height: 23px;
+    padding: 5px 7px !important;
+    border-radius: 5px;
+    font-size: 10px;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  /* Grid and Settings menus stay directly below the global controls. */
+  .menu-panel {
+    position: fixed !important;
+    top: 65px !important;
+    right: 8px !important;
+    bottom: auto !important;
+    left: auto !important;
+    z-index: 10000000 !important;
+    display: flex !important;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 6px !important;
+  }
+
+  .menu-panel > div > button {
+    min-height: 32px;
+    padding: 7px 10px !important;
+    font-size: 12px;
+  }
+
+  .dropdown-menu {
+    max-height: 55vh;
+    overflow-y: auto;
+    padding: 5px;
+    background: rgba(25, 25, 25, 0.97);
+    border-radius: 7px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  }
+
+  .dropdown-menu button {
+    min-height: 32px;
+    padding: 7px 10px !important;
+    font-size: 12px;
+  }
+
+  /* Leave space for the fixed header; stream cards remain in normal page flow. */
+  .grid {
+    height: auto !important;
+    min-height: calc(100vh - 205px);
+    padding: 205px 6px 58px !important;
+    gap: 7px !important;
+    grid-auto-rows: minmax(160px, 28vw);
+    align-content: start;
+  }
+
+  .card {
+    min-width: 0;
+    min-height: 160px !important;
+    border-radius: 8px;
+  }
+
+  .player,
+  .card iframe {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* Keep per-stream controls visible and easy to tap on touchscreens. */
+  .controls {
+    opacity: 1 !important;
+    top: 5px;
+    left: 5px;
+    gap: 4px;
+    z-index: 20;
+  }
+
+  .controls button {
+    min-width: 30px;
+    min-height: 30px;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+  }
+
+  .volume-slider {
+    width: 58px !important;
+    max-width: 18vw;
+  }
+
+  .footer {
+    z-index: 9000001;
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+}
+
+/* Very narrow phones */
+@media (max-width: 380px) {
+  .top-controls {
+    left: 82px !important;
+    gap: 3px !important;
+  }
+
+  .top-controls button {
+    padding: 4px 5px !important;
+    font-size: 9px;
+  }
+
+  .menu-panel {
+    top: 62px !important;
+  }
+
+  .grid {
+    padding-top: 215px !important;
+  }
+}
 
