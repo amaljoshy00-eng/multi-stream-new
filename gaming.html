@@ -242,7 +242,7 @@
 <script>
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBTPrDoxWQdEWLLHsUuJbv4cQX1vUd6lQY",
+  apiKey: "AIzaSyBTPrDoxWQdEWLLHsUuJbv6cQX1vUd6lQY",
   authDomain: "multi-stream-ddb1d.firebaseapp.com",
   databaseURL: "https://multi-stream-ddb1d-default-rtdb.firebaseio.com",
   projectId: "multi-stream-ddb1d",
@@ -667,6 +667,7 @@ function getKickChannel(url){
 const backBtn = document.createElement("button");
 
 backBtn.innerText = "⬅ Home";
+backBtn.className = "home-button";
 backBtn.style.position = "fixed";
 backBtn.style.top = "15px";
 backBtn.style.left = "15px";
@@ -691,98 +692,296 @@ new Sortable(
 );
 
 </script>
-  <script>
-(function () {
 
+<script>
+(function () {
+  const grid = document.getElementById("grid");
   const topControls = document.querySelector(".top-controls");
   const menuPanel = document.querySelector(".menu-panel");
-  const grid = document.getElementById("grid");
 
   if (!grid) return;
 
-  // CREATE MORE BUTTON
+  // Build the More button and panel only once.
+  let moreButton = document.getElementById("moreButton");
+  let morePanel = document.getElementById("morePanel");
 
-  const moreButton = document.createElement("button");
+  if (!moreButton) {
+    moreButton = document.createElement("button");
+    moreButton.id = "moreButton";
+    moreButton.type = "button";
+    moreButton.textContent = "☰ More";
+    moreButton.setAttribute("aria-expanded", "false");
+    document.body.appendChild(moreButton);
+  }
 
-  moreButton.id = "moreButton";
-  moreButton.type = "button";
-  moreButton.textContent = "☰ More";
-  moreButton.setAttribute("aria-expanded", "false");
+  if (!morePanel) {
+    morePanel = document.createElement("div");
+    morePanel.id = "morePanel";
+    document.body.appendChild(morePanel);
+  }
 
-  // CREATE MORE PANEL
-
-  const morePanel = document.createElement("div");
-
-  morePanel.id = "morePanel";
-
-  // MOVE EXISTING BUTTONS INTO MORE PANEL
-
-  if (topControls) {
+  // Move existing controls into the More panel.
+  if (topControls && topControls.parentElement !== morePanel) {
     morePanel.appendChild(topControls);
   }
 
-  if (menuPanel) {
+  if (menuPanel && menuPanel.parentElement !== morePanel) {
     morePanel.appendChild(menuPanel);
   }
 
-  document.body.appendChild(moreButton);
-  document.body.appendChild(morePanel);
+  // Mobile layout and More button styling.
+  if (!document.getElementById("multiStreamMoreFix")) {
+    const style = document.createElement("style");
+    style.id = "multiStreamMoreFix";
 
-  // OPEN AND CLOSE MORE
+    style.textContent = `
+      @media (max-width:700px) {
+        html, body {
+          width:100%;
+          height:100%;
+          margin:0;
+          overflow:hidden !important;
+        }
+
+        .top-bar {
+          position:fixed !important;
+          top:0 !important;
+          left:0 !important;
+          right:0 !important;
+          height:101px !important;
+          min-height:101px !important;
+          padding:43px 9px 7px !important;
+          z-index:10000000 !important;
+        }
+
+        .top-bar h2 {
+          position:absolute !important;
+          top:7px !important;
+          left:55px !important;
+          right:75px !important;
+          margin:0 !important;
+          font-size:16px !important;
+          white-space:nowrap;
+          overflow:hidden;
+          text-overflow:ellipsis;
+        }
+
+        .top-bar input,
+        .top-bar #link,
+        #link {
+          width:calc(100% - 68px) !important;
+          height:39px !important;
+          min-width:0;
+        }
+
+        .top-bar button {
+          min-height:39px !important;
+        }
+
+        .top-bar h3 {
+          display:none !important;
+        }
+
+        .home-button {
+          position:fixed !important;
+          top:7px !important;
+          left:7px !important;
+          z-index:10000021 !important;
+          min-height:34px;
+          padding:7px 9px !important;
+          font-size:11px;
+        }
+
+        #moreButton {
+          display:flex !important;
+          position:fixed !important;
+          top:7px !important;
+          right:7px !important;
+          z-index:10000030 !important;
+          align-items:center;
+          justify-content:center;
+          min-height:34px;
+          padding:7px 11px !important;
+          border:1px solid rgba(255,255,255,.18);
+          border-radius:8px;
+          background:linear-gradient(180deg,#343a44,#20242b);
+          color:#fff;
+          font-weight:700;
+          font-size:12px;
+        }
+
+        #morePanel {
+          display:none;
+          position:fixed !important;
+          top:47px !important;
+          right:7px !important;
+          left:7px !important;
+          z-index:10000029 !important;
+          max-height:70vh;
+          overflow-y:auto;
+          padding:10px;
+          border:1px solid rgba(255,255,255,.14);
+          border-radius:12px;
+          background:rgba(20,23,29,.98);
+          box-shadow:0 10px 30px rgba(0,0,0,.5);
+        }
+
+        body.more-open #morePanel {
+          display:block !important;
+        }
+
+        #morePanel .top-controls,
+        #morePanel .menu-panel {
+          position:static !important;
+          inset:auto !important;
+          display:flex !important;
+          flex-wrap:wrap;
+          justify-content:flex-start;
+          align-items:center;
+          gap:6px !important;
+          width:100%;
+          max-height:none !important;
+          overflow:visible !important;
+          margin:0 0 8px !important;
+          padding:0 !important;
+        }
+
+        #morePanel .top-controls button,
+        #morePanel .menu-panel button {
+          min-height:35px;
+          padding:7px 10px !important;
+          border-radius:8px;
+          font-size:11px;
+        }
+
+        #morePanel .dropdown-menu {
+          position:static !important;
+          max-height:40vh;
+          overflow:auto;
+          margin:5px 0 8px;
+          padding:7px;
+          background:#15191f;
+          border-radius:8px;
+        }
+
+        .grid {
+          position:fixed !important;
+          top:101px !important;
+          right:0 !important;
+          bottom:0 !important;
+          left:0 !important;
+          width:100% !important;
+          height:auto !important;
+          min-height:0 !important;
+          margin:0 !important;
+          padding:5px !important;
+          gap:5px !important;
+          align-content:stretch !important;
+          overflow:hidden !important;
+        }
+
+        .grid .card {
+          min-width:0 !important;
+          min-height:0 !important;
+          height:100% !important;
+          margin:0 !important;
+          overflow:hidden;
+        }
+
+        .grid .card .player,
+        .grid .card iframe {
+          width:100% !important;
+          height:100% !important;
+          min-height:0 !important;
+        }
+
+        .controls {
+          opacity:1 !important;
+        }
+
+        .footer {
+          display:none !important;
+        }
+
+        html.global-fullscreen .top-bar,
+        html.global-fullscreen .home-button,
+        html.global-fullscreen .footer {
+          display:none !important;
+        }
+
+        html.global-fullscreen .grid {
+          top:0 !important;
+          padding:4px !important;
+        }
+      }
+
+      @media (max-width:380px) {
+        .top-bar {
+          height:98px !important;
+          min-height:98px !important;
+        }
+
+        .grid {
+          top:98px !important;
+        }
+      }
+
+      @media (max-width:700px) and (max-height:600px) {
+        .top-bar {
+          height:88px !important;
+          min-height:88px !important;
+          padding-top:39px !important;
+        }
+
+        .grid {
+          top:88px !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  function closeMore() {
+    document.body.classList.remove("more-open");
+    moreButton.setAttribute("aria-expanded", "false");
+  }
 
   moreButton.addEventListener("click", function (event) {
-
+    event.preventDefault();
     event.stopPropagation();
 
-    const isOpen =
-      document.body.classList.toggle("more-open");
+    const open = document.body.classList.toggle("more-open");
 
-    moreButton.setAttribute(
-      "aria-expanded",
-      String(isOpen)
-    );
-
+    moreButton.setAttribute("aria-expanded", String(open));
   });
 
   morePanel.addEventListener("click", function (event) {
     event.stopPropagation();
   });
 
-  document.addEventListener("click", function () {
+  document.addEventListener("click", closeMore);
 
-    document.body.classList.remove("more-open");
-
-    moreButton.setAttribute("aria-expanded", "false");
-
-  });
-
-  // AUTOMATICALLY FIT STREAMS TO MOBILE SCREEN
-
+  // Automatically fit all visible streams inside the mobile screen.
   function fitStreamsToScreen() {
-
     if (window.innerWidth > 700) return;
 
-    const cards = Array.from(
-      grid.querySelectorAll(".card")
-    ).filter(card =>
-      getComputedStyle(card).display !== "none"
+    const allCards = Array.from(
+      grid.querySelectorAll(":scope > .card")
     );
 
-    const count = cards.length;
+    const visibleCards = allCards.filter(
+      card => getComputedStyle(card).display !== "none"
+    );
+
+    const count = visibleCards.length;
 
     if (!count) return;
 
-    let columns;
-
-    if (count === 1) {
-      columns = 1;
-    } else if (count <= 4) {
-      columns = 2;
-    } else {
-      columns = 3;
-    }
-
+    const columns = count === 1 ? 1 : (count <= 4 ? 2 : 3);
     const rows = Math.ceil(count / columns);
+
+    grid.style.display = "grid";
 
     grid.style.gridTemplateColumns =
       `repeat(${columns}, minmax(0, 1fr))`;
@@ -791,74 +990,55 @@ new Sortable(
       `repeat(${rows}, minmax(0, 1fr))`;
 
     grid.style.gridAutoRows = "minmax(0, 1fr)";
+    grid.style.alignContent = "stretch";
 
-    cards.forEach(card => {
-
+    visibleCards.forEach(card => {
+      card.style.minWidth = "0";
       card.style.minHeight = "0";
       card.style.height = "100%";
-
     });
-
   }
 
-  // WATCH FOR NEW OR REMOVED STREAMS
-
-  const observer = new MutationObserver(
-    fitStreamsToScreen
-  );
+  // Detect new streams added through Firebase.
+  const observer = new MutationObserver(() => {
+    requestAnimationFrame(fitStreamsToScreen);
+  });
 
   observer.observe(grid, {
-    childList: true,
-    subtree: false
+    childList:true,
+    subtree:false
   });
 
   window.addEventListener("resize", fitStreamsToScreen);
 
-  window.addEventListener(
-    "orientationchange",
-    fitStreamsToScreen
-  );
+  window.addEventListener("orientationchange", () => {
+    setTimeout(fitStreamsToScreen, 150);
+  });
 
-  // FULLSCREEN MODE
-
-  function updateGlobalFullscreenState() {
-
-    const isGlobalFullscreen =
+  // Handle global fullscreen.
+  document.addEventListener("fullscreenchange", function () {
+    const globalFullscreen =
       document.fullscreenElement === document.documentElement;
 
     document.documentElement.classList.toggle(
       "global-fullscreen",
-      isGlobalFullscreen
+      globalFullscreen
     );
 
-    if (!isGlobalFullscreen) {
-
-      document.body.classList.remove("more-open");
-
-      moreButton.setAttribute("aria-expanded", "false");
-
+    if (!globalFullscreen) {
+      closeMore();
     }
 
     fitStreamsToScreen();
+  });
 
-  }
-
-  document.addEventListener(
-    "fullscreenchange",
-    updateGlobalFullscreenState
-  );
-
-  // INITIAL LAYOUT
-
-  requestAnimationFrame(fitStreamsToScreen);
-
-  setTimeout(fitStreamsToScreen, 500);
-
-  setTimeout(fitStreamsToScreen, 1500);
+  // Run after Firebase has finished loading streams.
+  [100, 500, 1200, 2200].forEach(delay => {
+    setTimeout(fitStreamsToScreen, delay);
+  });
 
 })();
 </script>
 
 </body>
-</html>
 </html>
