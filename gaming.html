@@ -695,349 +695,322 @@ new Sortable(
 
 <script>
 (function () {
-  const grid = document.getElementById("grid");
-  const topControls = document.querySelector(".top-controls");
-  const menuPanel = document.querySelector(".menu-panel");
-
+  const grid = document.getElementById('grid');
+  const topControls = document.querySelector('.top-controls');
+  const menuPanel = document.querySelector('.menu-panel');
   if (!grid) return;
 
-  // Build the More button and panel only once.
-  let moreButton = document.getElementById("moreButton");
-  let morePanel = document.getElementById("morePanel");
-
+  let moreButton = document.getElementById('moreButton');
   if (!moreButton) {
-    moreButton = document.createElement("button");
-    moreButton.id = "moreButton";
-    moreButton.type = "button";
-    moreButton.textContent = "☰ More";
-    moreButton.setAttribute("aria-expanded", "false");
+    moreButton = document.createElement('button');
+    moreButton.id = 'moreButton';
+    moreButton.type = 'button';
+    moreButton.textContent = '☰ More';
+    moreButton.setAttribute('aria-expanded', 'false');
     document.body.appendChild(moreButton);
   }
 
+  let morePanel = document.getElementById('morePanel');
   if (!morePanel) {
-    morePanel = document.createElement("div");
-    morePanel.id = "morePanel";
+    morePanel = document.createElement('div');
+    morePanel.id = 'morePanel';
     document.body.appendChild(morePanel);
   }
 
-  // Move existing controls into the More panel.
-  if (topControls && topControls.parentElement !== morePanel) {
-    morePanel.appendChild(topControls);
-  }
+  // Move the existing controls; their original buttons and handlers remain intact.
+  if (topControls && topControls.parentElement !== morePanel) morePanel.appendChild(topControls);
+  if (menuPanel && menuPanel.parentElement !== morePanel) morePanel.appendChild(menuPanel);
 
-  if (menuPanel && menuPanel.parentElement !== morePanel) {
-    morePanel.appendChild(menuPanel);
-  }
+  const style = document.createElement('style');
+  style.id = 'multiStreamMoreFix';
+  style.textContent = `
+    /* More menu works on desktop AND mobile */
+    #moreButton {
+      display:inline-flex !important;
+      position:fixed !important;
+      top:12px !important;
+      right:12px !important;
+      z-index:2147483000 !important;
+      align-items:center;
+      justify-content:center;
+      padding:9px 14px !important;
+      min-height:38px;
+      border:1px solid rgba(255,255,255,.2) !important;
+      border-radius:9px !important;
+      background:linear-gradient(180deg,#343a44,#20242b) !important;
+      color:#fff !important;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 3px 12px rgba(0,0,0,.35);
+    }
 
-  // Mobile layout and More button styling.
-  if (!document.getElementById("multiStreamMoreFix")) {
-    const style = document.createElement("style");
-    style.id = "multiStreamMoreFix";
+    #morePanel {
+      display:none !important;
+      position:fixed !important;
+      top:58px !important;
+      right:12px !important;
+      left:auto !important;
+      width:min(440px,calc(100vw - 24px)) !important;
+      max-height:calc(100vh - 75px) !important;
+      overflow:auto !important;
+      padding:12px !important;
+      z-index:2147482999 !important;
+      background:rgba(20,23,29,.98) !important;
+      border:1px solid rgba(255,255,255,.18) !important;
+      border-radius:12px !important;
+      box-shadow:0 10px 30px rgba(0,0,0,.55) !important;
+      box-sizing:border-box !important;
+    }
 
-    style.textContent = `
-      @media (max-width:700px) {
-        html, body {
-          width:100%;
-          height:100%;
-          margin:0;
-          overflow:hidden !important;
-        }
+    body.more-open #morePanel { display:block !important; }
 
-        .top-bar {
-          position:fixed !important;
-          top:0 !important;
-          left:0 !important;
-          right:0 !important;
-          height:101px !important;
-          min-height:101px !important;
-          padding:43px 9px 7px !important;
-          z-index:10000000 !important;
-        }
+    #morePanel .top-controls,
+    #morePanel .menu-panel {
+      position:static !important;
+      inset:auto !important;
+      display:flex !important;
+      flex-direction:row !important;
+      flex-wrap:wrap !important;
+      align-items:center !important;
+      justify-content:flex-start !important;
+      gap:7px !important;
+      width:100% !important;
+      margin:0 0 9px !important;
+      padding:0 !important;
+      z-index:auto !important;
+    }
 
-        .top-bar h2 {
-          position:absolute !important;
-          top:7px !important;
-          left:55px !important;
-          right:75px !important;
-          margin:0 !important;
-          font-size:16px !important;
-          white-space:nowrap;
-          overflow:hidden;
-          text-overflow:ellipsis;
-        }
+    #morePanel .top-controls button,
+    #morePanel .menu-panel button {
+      min-height:35px;
+      padding:7px 10px !important;
+      border-radius:8px !important;
+      font-size:12px;
+    }
 
-        .top-bar input,
-        .top-bar #link,
-        #link {
-          width:calc(100% - 68px) !important;
-          height:39px !important;
-          min-width:0;
-        }
+    #morePanel .dropdown-menu {
+      position:static !important;
+      display:none;
+      flex-direction:column !important;
+      gap:5px !important;
+      max-height:35vh;
+      overflow:auto;
+      margin:6px 0 8px !important;
+      padding:7px !important;
+      background:#15191f;
+      border-radius:8px;
+    }
 
-        .top-bar button {
-          min-height:39px !important;
-        }
+    #morePanel .dropdown-menu[style*='display: flex'] {
+      display:flex !important;
+    }
 
-        .top-bar h3 {
-          display:none !important;
-        }
-
-        .home-button {
-          position:fixed !important;
-          top:7px !important;
-          left:7px !important;
-          z-index:10000021 !important;
-          min-height:34px;
-          padding:7px 9px !important;
-          font-size:11px;
-        }
-
-        #moreButton {
-          display:flex !important;
-          position:fixed !important;
-          top:7px !important;
-          right:7px !important;
-          z-index:10000030 !important;
-          align-items:center;
-          justify-content:center;
-          min-height:34px;
-          padding:7px 11px !important;
-          border:1px solid rgba(255,255,255,.18);
-          border-radius:8px;
-          background:linear-gradient(180deg,#343a44,#20242b);
-          color:#fff;
-          font-weight:700;
-          font-size:12px;
-        }
-
-        #morePanel {
-          display:none;
-          position:fixed !important;
-          top:47px !important;
-          right:7px !important;
-          left:7px !important;
-          z-index:10000029 !important;
-          max-height:70vh;
-          overflow-y:auto;
-          padding:10px;
-          border:1px solid rgba(255,255,255,.14);
-          border-radius:12px;
-          background:rgba(20,23,29,.98);
-          box-shadow:0 10px 30px rgba(0,0,0,.5);
-        }
-
-        body.more-open #morePanel {
-          display:block !important;
-        }
-
-        #morePanel .top-controls,
-        #morePanel .menu-panel {
-          position:static !important;
-          inset:auto !important;
-          display:flex !important;
-          flex-wrap:wrap;
-          justify-content:flex-start;
-          align-items:center;
-          gap:6px !important;
-          width:100%;
-          max-height:none !important;
-          overflow:visible !important;
-          margin:0 0 8px !important;
-          padding:0 !important;
-        }
-
-        #morePanel .top-controls button,
-        #morePanel .menu-panel button {
-          min-height:35px;
-          padding:7px 10px !important;
-          border-radius:8px;
-          font-size:11px;
-        }
-
-        #morePanel .dropdown-menu {
-          position:static !important;
-          max-height:40vh;
-          overflow:auto;
-          margin:5px 0 8px;
-          padding:7px;
-          background:#15191f;
-          border-radius:8px;
-        }
-
-        .grid {
-          position:fixed !important;
-          top:101px !important;
-          right:0 !important;
-          bottom:0 !important;
-          left:0 !important;
-          width:100% !important;
-          height:auto !important;
-          min-height:0 !important;
-          margin:0 !important;
-          padding:5px !important;
-          gap:5px !important;
-          align-content:stretch !important;
-          overflow:hidden !important;
-        }
-
-        .grid .card {
-          min-width:0 !important;
-          min-height:0 !important;
-          height:100% !important;
-          margin:0 !important;
-          overflow:hidden;
-        }
-
-        .grid .card .player,
-        .grid .card iframe {
-          width:100% !important;
-          height:100% !important;
-          min-height:0 !important;
-        }
-
-        .controls {
-          opacity:1 !important;
-        }
-
-        .footer {
-          display:none !important;
-        }
-
-        html.global-fullscreen .top-bar,
-        html.global-fullscreen .home-button,
-        html.global-fullscreen .footer {
-          display:none !important;
-        }
-
-        html.global-fullscreen .grid {
-          top:0 !important;
-          padding:4px !important;
-        }
+    @media (max-width:700px) {
+      html,body {
+        width:100%;
+        height:100%;
+        overflow:hidden !important;
       }
 
-      @media (max-width:380px) {
-        .top-bar {
-          height:98px !important;
-          min-height:98px !important;
-        }
-
-        .grid {
-          top:98px !important;
-        }
+      .top-bar {
+        position:fixed !important;
+        top:0 !important;
+        left:0 !important;
+        right:0 !important;
+        z-index:10000000 !important;
+        height:101px !important;
+        min-height:101px !important;
+        padding:43px 9px 7px !important;
+        margin:0 !important;
       }
 
-      @media (max-width:700px) and (max-height:600px) {
-        .top-bar {
-          height:88px !important;
-          min-height:88px !important;
-          padding-top:39px !important;
-        }
-
-        .grid {
-          top:88px !important;
-        }
+      .top-bar h2 {
+        position:absolute !important;
+        top:7px !important;
+        left:55px !important;
+        right:75px !important;
+        margin:0 !important;
+        font-size:16px !important;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
       }
-    `;
 
-    document.head.appendChild(style);
-  }
+      .top-bar input,.top-bar #link,#link {
+        width:calc(100% - 68px) !important;
+        height:39px !important;
+        min-width:0;
+      }
+
+      .top-bar h3 {
+        display:none !important;
+      }
+
+      .home-button {
+        position:fixed !important;
+        top:7px !important;
+        left:7px !important;
+        z-index:10000021 !important;
+        min-height:34px;
+        padding:7px 9px !important;
+        font-size:11px;
+      }
+
+      #moreButton {
+        top:7px !important;
+        right:7px !important;
+        min-height:34px;
+        padding:7px 11px !important;
+      }
+
+      #morePanel {
+        top:47px !important;
+        left:7px !important;
+        right:7px !important;
+        width:auto !important;
+        max-height:70vh !important;
+      }
+
+      .grid {
+        position:fixed !important;
+        top:101px !important;
+        right:0 !important;
+        bottom:0 !important;
+        left:0 !important;
+        width:100% !important;
+        height:auto !important;
+        min-height:0 !important;
+        max-height:none !important;
+        margin:0 !important;
+        padding:5px !important;
+        gap:5px !important;
+        align-content:stretch !important;
+        overflow:hidden !important;
+      }
+
+      .grid > .card {
+        min-width:0 !important;
+        min-height:0 !important;
+        height:100% !important;
+        margin:0 !important;
+        overflow:hidden;
+      }
+
+      .grid .card .player,.grid .card iframe {
+        width:100% !important;
+        height:100% !important;
+        min-height:0 !important;
+      }
+
+      .controls {
+        opacity:1 !important;
+      }
+
+      .footer {
+        display:none !important;
+      }
+
+      html.global-fullscreen .top-bar,
+      html.global-fullscreen .home-button,
+      html.global-fullscreen .footer {
+        display:none !important;
+      }
+
+      html.global-fullscreen .grid {
+        top:0 !important;
+        padding:4px !important;
+      }
+    }
+
+    @media (max-width:380px) {
+      .top-bar {
+        height:98px !important;
+        min-height:98px !important;
+      }
+
+      .grid {
+        top:98px !important;
+      }
+    }
+
+    @media (max-width:700px) and (max-height:600px) {
+      .top-bar {
+        height:88px !important;
+        min-height:88px !important;
+        padding-top:39px !important;
+      }
+
+      .grid {
+        top:88px !important;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
 
   function closeMore() {
-    document.body.classList.remove("more-open");
-    moreButton.setAttribute("aria-expanded", "false");
+    document.body.classList.remove('more-open');
+    moreButton.setAttribute('aria-expanded', 'false');
   }
 
-  moreButton.addEventListener("click", function (event) {
+  moreButton.addEventListener('click', function (event) {
     event.preventDefault();
     event.stopPropagation();
 
-    const open = document.body.classList.toggle("more-open");
-
-    moreButton.setAttribute("aria-expanded", String(open));
+    const opened = document.body.classList.toggle('more-open');
+    moreButton.setAttribute('aria-expanded', String(opened));
   });
 
-  morePanel.addEventListener("click", function (event) {
-    event.stopPropagation();
-  });
+  morePanel.addEventListener('click', event => event.stopPropagation());
+  document.addEventListener('click', closeMore);
 
-  document.addEventListener("click", closeMore);
-
-  // Automatically fit all visible streams inside the mobile screen.
-  function fitStreamsToScreen() {
+  function fitStreams() {
     if (window.innerWidth > 700) return;
 
-    const allCards = Array.from(
-      grid.querySelectorAll(":scope > .card")
-    );
+    const cards = Array.from(grid.querySelectorAll(':scope > .card'))
+      .filter(card => getComputedStyle(card).display !== 'none');
 
-    const visibleCards = allCards.filter(
-      card => getComputedStyle(card).display !== "none"
-    );
-
-    const count = visibleCards.length;
+    const count = cards.length;
 
     if (!count) return;
 
-    const columns = count === 1 ? 1 : (count <= 4 ? 2 : 3);
+    const columns = count === 1 ? 1 : count <= 4 ? 2 : 3;
     const rows = Math.ceil(count / columns);
 
-    grid.style.display = "grid";
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = `repeat(${columns},minmax(0,1fr))`;
+    grid.style.gridTemplateRows = `repeat(${rows},minmax(0,1fr))`;
+    grid.style.gridAutoRows = 'minmax(0,1fr)';
 
-    grid.style.gridTemplateColumns =
-      `repeat(${columns}, minmax(0, 1fr))`;
-
-    grid.style.gridTemplateRows =
-      `repeat(${rows}, minmax(0, 1fr))`;
-
-    grid.style.gridAutoRows = "minmax(0, 1fr)";
-    grid.style.alignContent = "stretch";
-
-    visibleCards.forEach(card => {
-      card.style.minWidth = "0";
-      card.style.minHeight = "0";
-      card.style.height = "100%";
+    cards.forEach(card => {
+      card.style.minWidth = '0';
+      card.style.minHeight = '0';
+      card.style.height = '100%';
     });
   }
 
-  // Detect new streams added through Firebase.
-  const observer = new MutationObserver(() => {
-    requestAnimationFrame(fitStreamsToScreen);
+  const observer = new MutationObserver(() => requestAnimationFrame(fitStreams));
+  observer.observe(grid, { childList:true });
+
+  window.addEventListener('resize', fitStreams);
+
+  window.addEventListener('orientationchange', () => {
+    setTimeout(fitStreams,150);
   });
 
-  observer.observe(grid, {
-    childList:true,
-    subtree:false
+  document.addEventListener('fullscreenchange', function () {
+    const full = document.fullscreenElement === document.documentElement;
+
+    document.documentElement.classList.toggle('global-fullscreen',full);
+
+    if (!full) closeMore();
+
+    fitStreams();
   });
 
-  window.addEventListener("resize", fitStreamsToScreen);
-
-  window.addEventListener("orientationchange", () => {
-    setTimeout(fitStreamsToScreen, 150);
-  });
-
-  // Handle global fullscreen.
-  document.addEventListener("fullscreenchange", function () {
-    const globalFullscreen =
-      document.fullscreenElement === document.documentElement;
-
-    document.documentElement.classList.toggle(
-      "global-fullscreen",
-      globalFullscreen
-    );
-
-    if (!globalFullscreen) {
-      closeMore();
-    }
-
-    fitStreamsToScreen();
-  });
-
-  // Run after Firebase has finished loading streams.
-  [100, 500, 1200, 2200].forEach(delay => {
-    setTimeout(fitStreamsToScreen, delay);
-  });
-
+  [100,500,1200,2200].forEach(delay => setTimeout(fitStreams,delay));
 })();
+
 </script>
 
 </body>
