@@ -183,7 +183,7 @@
       isolation:isolate;
     }
 
-    .card.is-controls-open .controls{display:flex !important;}
+    .video-overlay.is-controls-open .controls{display:flex !important;}
 
     .controls button,
     .controls input{
@@ -311,6 +311,45 @@ firebase.initializeApp(firebaseConfig);
 
 const db = firebase.database();
 
+// Controls live in a top-level overlay, OUTSIDE every video card/iframe.
+// This avoids Android Chrome sending taps to the embedded video instead
+// of buttons that visually sit above it.
+const videoOverlayRoot = document.createElement("div");
+videoOverlayRoot.id = "videoOverlayRoot";
+videoOverlayRoot.style.cssText =
+  "position:fixed;inset:0;z-index:2147483647;pointer-events:none;";
+document.body.appendChild(videoOverlayRoot);
+
+const videoOverlayPairs = new Map();
+
+function updateVideoOverlay(card, overlay){
+  if(!card || !overlay) return;
+  if(!card.isConnected){
+    overlay.remove();
+    videoOverlayPairs.delete(card);
+    return;
+  }
+  const rect = card.getBoundingClientRect();
+  const visible = getComputedStyle(card).display !== "none" &&
+                  rect.width > 0 && rect.height > 0;
+  overlay.style.display = visible ? "block" : "none";
+  if(!visible) return;
+  overlay.style.left = rect.left + "px";
+  overlay.style.top = rect.top + "px";
+  overlay.style.width = rect.width + "px";
+  overlay.style.height = rect.height + "px";
+}
+
+function updateAllVideoOverlays(){
+  videoOverlayPairs.forEach((overlay, card) => updateVideoOverlay(card, overlay));
+}
+
+window.addEventListener("scroll", updateAllVideoOverlays, true);
+window.addEventListener("resize", updateAllVideoOverlays);
+window.addEventListener("orientationchange", () => setTimeout(updateAllVideoOverlays, 150));
+document.addEventListener("fullscreenchange", () => requestAnimationFrame(updateAllVideoOverlays));
+
+
 let apiReady = false;
 
 function onYouTubeIframeAPIReady(){
@@ -357,6 +396,7 @@ db.ref("streams/gaming").on("value", snap => {
   });
 
   applyVisibility();
+  requestAnimationFrame(updateAllVideoOverlays);
 });
 
 function addStream(){
@@ -417,6 +457,13 @@ function createPlayer(streamData,key){
 
   let div = document.createElement("div");
   div.className = "card";
+
+  const videoOverlay = document.createElement("div");
+  videoOverlay.className = "video-overlay";
+  videoOverlay.style.cssText =
+    "position:absolute;pointer-events:none;overflow:visible;";
+  videoOverlayRoot.appendChild(videoOverlay);
+  videoOverlayPairs.set(div, videoOverlay);
 
   let playerDiv = document.createElement("div");
   playerDiv.className = "player";
@@ -507,7 +554,7 @@ function createPlayer(streamData,key){
 
   controls.appendChild(delBtn);
 
-  div.appendChild(controls);
+  videoOverlay.appendChild(controls);
 
   const cardMenuButton = document.createElement("button");
   cardMenuButton.type = "button";
@@ -523,18 +570,16 @@ function createPlayer(streamData,key){
       event.stopPropagation();
     }
 
-    const willOpen = !div.classList.contains("is-controls-open");
+    const willOpen = !videoOverlay.classList.contains("is-controls-open");
 
-    document.querySelectorAll(".card.is-controls-open").forEach(card => {
-      card.classList.remove("is-controls-open");
-
-      const button = card.querySelector(".card-menu-toggle");
-
+    document.querySelectorAll(".video-overlay.is-controls-open").forEach(overlay => {
+      overlay.classList.remove("is-controls-open");
+      const button = overlay.querySelector(".card-menu-toggle");
       if(button) button.setAttribute("aria-expanded", "false");
     });
 
     if(willOpen){
-      div.classList.add("is-controls-open");
+      videoOverlay.classList.add("is-controls-open");
       cardMenuButton.setAttribute("aria-expanded", "true");
     }
   }
@@ -566,13 +611,14 @@ function createPlayer(streamData,key){
     if(event.key === "Enter" || event.key === " ") activateVideoMenu(event);
   });
 
-  div.appendChild(cardMenuButton);
+  videoOverlay.appendChild(cardMenuButton);
 
   controls.addEventListener("click", function(event){
     event.stopPropagation();
   });
 
   grid.appendChild(div);
+  requestAnimationFrame(() => updateVideoOverlay(div, videoOverlay));
 
   if(platform === "kick" && kickChannel){
 
@@ -763,6 +809,8 @@ function applyVisibility(){
     card.style.display =
       index < maxVisibleStreams ? "block" : "none";
   });
+
+  requestAnimationFrame(updateAllVideoOverlays);
 }
 
 function setGlobalQuality(quality, clickEvent){
@@ -880,7 +928,9 @@ document.body.appendChild(backBtn);
 new Sortable(
   document.getElementById("grid"),
   {
-    animation:150
+    animation:150,
+    onEnd: () => requestAnimationFrame(updateAllVideoOverlays),
+    onSort: () => requestAnimationFrame(updateAllVideoOverlays)
   }
 );
 
@@ -925,6 +975,25 @@ new Sortable(
     style.id = "multiStreamMoreFix";
 
     style.textContent = `
+      #videoOverlayRoot {
+        position:fixed !important;
+        inset:0 !important;
+        z-index:2147483647 !important;
+        pointer-events:none !important;
+        overflow:visible !important;
+      }
+      .video-overlay {
+        position:absolute !important;
+        pointer-events:none !important;
+        overflow:visible !important;
+      }
+      .video-overlay .card-menu-toggle,
+      .video-overlay .controls {
+        pointer-events:auto !important;
+      }
+      .video-overlay .controls { display:none; }
+      .video-overlay.is-controls-open .controls { display:flex !important; }
+
       #moreButton {
         display:flex !important;
         position:fixed !important;
@@ -997,10 +1066,10 @@ new Sortable(
       .card { isolation:isolate !important; }
       .card .player { position:relative !important; z-index:1 !important; }
       .card .player iframe { position:relative !important; z-index:1 !important; }
-      .card .card-menu-toggle { z-index:2147483000 !important; pointer-events:auto !important; touch-action:none !important; }
-      .card .controls { z-index:2147482999 !important; }
+      .video-overlay .card-menu-toggle { z-index:2147483000 !important; pointer-events:auto !important; touch-action:none !important; }
+      .video-overlay .controls { z-index:2147482999 !important; }
 
-      .card .controls.kick-controls {
+      .video-overlay .controls.kick-controls {
         top:54px !important;
         right:7px !important;
         left:auto !important;
@@ -1011,9 +1080,9 @@ new Sortable(
         pointer-events:auto !important;
       }
 
-      .card.is-controls-open .controls.kick-controls { display:flex !important; }
+      .video-overlay.is-controls-open .controls.kick-controls { display:flex !important; }
 
-      .card .kick-controls button {
+      .video-overlay .kick-controls button {
         position:relative !important;
         z-index:29 !important;
         display:inline-flex !important;
@@ -1097,7 +1166,26 @@ new Sortable(
           font-size:11px;
         }
 
-        #moreButton {
+        #videoOverlayRoot {
+        position:fixed !important;
+        inset:0 !important;
+        z-index:2147483647 !important;
+        pointer-events:none !important;
+        overflow:visible !important;
+      }
+      .video-overlay {
+        position:absolute !important;
+        pointer-events:none !important;
+        overflow:visible !important;
+      }
+      .video-overlay .card-menu-toggle,
+      .video-overlay .controls {
+        pointer-events:auto !important;
+      }
+      .video-overlay .controls { display:none; }
+      .video-overlay.is-controls-open .controls { display:flex !important; }
+
+      #moreButton {
           top:7px !important;
           right:7px !important;
           min-height:36px;
@@ -1143,7 +1231,7 @@ new Sortable(
           min-height:0 !important;
         }
 
-        .card-menu-toggle {
+        .video-overlay .card-menu-toggle {
           width:44px !important;
           height:44px !important;
           top:6px !important;
@@ -1154,7 +1242,7 @@ new Sortable(
           -webkit-tap-highlight-color:transparent;
         }
 
-        .card .controls {
+        .video-overlay .controls {
           top:56px !important;
           right:6px !important;
           z-index:2147482999 !important;
@@ -1162,7 +1250,7 @@ new Sortable(
           pointer-events:auto !important;
         }
 
-        .card .controls button {
+        .video-overlay .controls button {
           min-height:42px !important;
           min-width:42px !important;
           padding:9px 11px !important;
@@ -1215,11 +1303,11 @@ new Sortable(
   }
 
   document.addEventListener("click", function(event){
-    if(event.target.closest && event.target.closest(".card-menu-toggle, .card .controls")) return;
+    if(event.target.closest && event.target.closest(".card-menu-toggle, .video-overlay .controls")) return;
 
-    document.querySelectorAll(".card.is-controls-open").forEach(card => {
-      card.classList.remove("is-controls-open");
-      const button = card.querySelector(".card-menu-toggle");
+    document.querySelectorAll(".video-overlay.is-controls-open").forEach(overlay => {
+      overlay.classList.remove("is-controls-open");
+      const button = overlay.querySelector(".card-menu-toggle");
       if(button) button.setAttribute("aria-expanded", "false");
     });
   });
@@ -1278,10 +1366,14 @@ new Sortable(
       card.style.minHeight = "0";
       card.style.height = "100%";
     });
+    requestAnimationFrame(updateAllVideoOverlays);
   }
 
   const observer = new MutationObserver(() => {
-    requestAnimationFrame(fitStreamsToScreen);
+    requestAnimationFrame(() => {
+      fitStreamsToScreen();
+      updateAllVideoOverlays();
+    });
   });
 
   observer.observe(grid, {
@@ -1312,7 +1404,7 @@ new Sortable(
   });
 
   [100, 500, 1200, 2200].forEach(delay => {
-    setTimeout(fitStreamsToScreen, delay);
+    setTimeout(() => { fitStreamsToScreen(); updateAllVideoOverlays(); }, delay);
   });
 
 })();
