@@ -1,0 +1,39 @@
+<!-- CENTRAL UI TEMPLATE: shared navigation and live viewer pill -->
+<template id="multiStreamShell">
+  <header class="hub-nav">
+    <a class="hub-brand" href="index.html" aria-label="Multi Stream Hub Home">
+      <span class="hub-logo">▶</span>
+      <span class="hub-brand-copy">
+        <strong>Multi Stream Hub</strong>
+        <small>Watch Multiple Live Streams Together</small>
+      </span>
+    </a>
+
+    <nav class="hub-links" aria-label="Main navigation">
+      <a data-page="index.html" href="index.html">⌂ <span>Home</span></a>
+      <a data-page="gaming.html" href="gaming.html">🎮 <span>Gaming</span></a>
+      <a data-page="sports.html" href="sports.html">🏆 <span>Sports</span></a>
+      <a data-page="music.html" href="music.html">♫ <span>Music</span></a>
+      <a data-page="news.html" href="news.html">▤ <span>News</span></a>
+    </nav>
+
+    <div class="hub-nav-actions">
+      <button class="hub-admin" id="hubAdminLogin" type="button">
+        ♙ <span>Admin Login</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="hub-hero">
+    <div class="hub-hero-copy">
+      <h1>Live <span>Multi-Stream</span></h1>
+      <p>Watch and control multiple live streams in one place</p>
+    </div>
+
+    <div class="hub-status" aria-live="polite">
+      <i class="status-dot"></i>
+      <span>LIVE VIEWER</span>
+      <b id="heroOnlineCount">—</b>
+    </div>
+  </section>
+</template>
