@@ -1,185 +1,190 @@
-/* MULTI STREAM HUB - SHARED UI LOADER */
+/* Multi Stream Hub - shared UI loader and live viewer count */
 
 (async function loadMultiStreamSharedUI() {
-    const mount = document.getElementById('shared-ui');
-    if (!mount) return;
+  const mount = document.getElementById('shared-ui');
+  if (!mount) return;
 
-    const lastPathPart =
-        window.location.pathname.split('/').filter(Boolean).pop() || '';
+  const FIREBASE_CONFIG = {
+    apiKey: 'AIzaSyBTPrDoxWQdEWLLHsUuJbv6cQX1vUd6lQY',
+    authDomain: 'multi-stream-ddb1d.firebaseapp.com',
+    databaseURL: 'https://multi-stream-ddb1d-default-rtdb.firebaseio.com',
+    projectId: 'multi-stream-ddb1d',
+    appId: '1:305282777189:web:50adf19c4bbb1c8005c68c'
+  };
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const existing = [...document.scripts].find(s => s.src === src);
+
+      if (existing) {
+        if (existing.dataset.loaded === 'true') return resolve();
+        existing.addEventListener('load', resolve, { once: true });
+        existing.addEventListener('error', reject, { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => {
+        script.dataset.loaded = 'true';
+        resolve();
+      };
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
+  async function startHomepageViewerCount() {
+    const target = document.getElementById('homeViewerCount');
+    if (!target) return;
+
+    try {
+      await loadScript(
+        'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js'
+      );
+
+      await loadScript(
+        'https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js'
+      );
+
+      if (!window.firebase) {
+        throw new Error('Firebase SDK unavailable');
+      }
+
+      if (!firebase.apps.length) {
+        firebase.initializeApp(FIREBASE_CONFIG);
+      }
+
+      firebase.database().ref('users').on('value', snapshot => {
+        const liveTarget = document.getElementById('homeViewerCount');
+
+        if (liveTarget) {
+          liveTarget.textContent = String(snapshot.numChildren());
+        }
+
+      }, error => {
+        console.error('Homepage viewer count:', error);
+        target.textContent = '—';
+      });
+
+    } catch (error) {
+      console.error('Homepage viewer count:', error);
+      target.textContent = '—';
+    }
+  }
+
+  try {
+    const response = await fetch('ui-ux.html', {
+      cache: 'no-cache'
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        'Could not load ui-ux.html (' + response.status + ')'
+      );
+    }
+
+    const markup = await response.text();
+
+    const parsed = new DOMParser().parseFromString(
+      markup,
+      'text/html'
+    );
+
+    const template = parsed.getElementById('multiStreamShell');
+
+    if (!template) {
+      throw new Error('Shared UI template was not found.');
+    }
+
+    mount.replaceChildren(template.content.cloneNode(true));
+
+    const current =
+      location.pathname.split('/').filter(Boolean).pop() || 'index.html';
 
     const isHome =
-        lastPathPart === '' ||
-        lastPathPart === 'index.html' ||
-        !lastPathPart.includes('.');
+      current === 'index.html' || !current.includes('.');
 
-    const currentPage = isHome ? 'index.html' : lastPathPart;
+    document.body.classList.toggle('home-page', isHome);
 
-    try {
-        const response = await fetch('ui-ux.html', {
-            cache: 'no-store'
-        });
+    const nav = mount.querySelector('.hub-links');
+    const hero = mount.querySelector('.hub-hero');
+    const adminActions = mount.querySelector('.hub-nav-actions');
 
-        if (!response.ok) {
-            throw new Error('Could not load ui-ux.html');
+    if (isHome) {
+      nav?.remove();
+      hero?.remove();
+
+      // Live viewer counter beside Admin Login.
+      const pill = document.createElement('div');
+
+      pill.className = 'home-live-viewers';
+      pill.setAttribute('aria-live', 'polite');
+
+      pill.innerHTML =
+        '<i class="home-live-dot" aria-hidden="true"></i>' +
+        '<span>LIVE VIEWERS</span>' +
+        '<strong id="homeViewerCount">—</strong>';
+
+      if (adminActions) {
+        mount.querySelector('.hub-nav')?.insertBefore(
+          pill,
+          adminActions
+        );
+      }
+
+      startHomepageViewerCount();
+
+    } else {
+      nav?.querySelectorAll('a').forEach(link => {
+        if (link.dataset.page === current) {
+          link.classList.add('active');
         }
+      });
 
-        const markup = await response.text();
-        const parsed = new DOMParser().parseFromString(markup, 'text/html');
-        const template = parsed.getElementById('multiStreamShell');
+      adminActions?.remove();
+    }
 
-        if (!template) {
-            throw new Error('Shared UI template not found.');
-        }
+    const adminButton = mount.querySelector('#hubAdminLogin');
 
-        mount.replaceChildren(template.content.cloneNode(true));
-
-        const nav = mount.querySelector('.hub-links');
-        const adminActions = mount.querySelector('.hub-nav-actions');
-        const hero = mount.querySelector('.hub-hero');
-        const adminButton = mount.querySelector('#hubAdminLogin');
-
-        document.body.classList.toggle('home-page', isHome);
-
-        if (isHome) {
-            nav?.remove();
-            hero?.remove();
-
-            adminActions?.classList.add('home-admin-actions');
-
-            // Create the live viewer counter on the homepage.
-            const viewerPill = document.createElement('div');
-            viewerPill.className = 'home-live-viewers';
-            viewerPill.setAttribute('aria-live', 'polite');
-            viewerPill.innerHTML = `
-                <span class="home-live-dot"></span>
-                <span>LIVE VIEWERS</span>
-                <strong id="homeViewerCount">—</strong>
-            `;
-
-            const header = mount.querySelector('.hub-nav');
-            if (header && adminActions) {
-                header.insertBefore(viewerPill, adminActions);
-            }
-
-            // Read the existing Firebase viewer count.
-            // This does not create or modify user presence records.
-            loadHomeViewerCount();
-
+    if (adminButton) {
+      adminButton.addEventListener('click', () => {
+        if (typeof window.openAdminLogin === 'function') {
+          window.openAdminLogin();
         } else {
-            nav?.querySelectorAll('a').forEach(link => {
-                if (link.dataset.page === currentPage) {
-                    link.classList.add('active');
-                }
-            });
-
-            adminActions?.remove();
+          alert('Admin login is not configured yet.');
         }
-
-        if (adminButton) {
-            adminButton.addEventListener('click', () => {
-                if (typeof window.openAdminLogin === 'function') {
-                    window.openAdminLogin();
-                } else {
-                    alert('Admin login is not configured yet.');
-                }
-            });
-        }
-
-        document.documentElement.classList.add('shared-ui-ready');
-
-        // Preserve existing category-page viewer counter.
-        const viewerElement = document.getElementById('viewerCount');
-        const heroCount = document.getElementById('heroOnlineCount');
-
-        if (viewerElement && heroCount) {
-            const updateCount = () => {
-                heroCount.textContent =
-                    viewerElement.textContent.trim();
-            };
-
-            updateCount();
-
-            new MutationObserver(updateCount).observe(viewerElement, {
-                childList: true,
-                subtree: true,
-                characterData: true
-            });
-        }
-
-    } catch (error) {
-        console.error('Multi Stream Hub UI:', error);
-
-        mount.innerHTML =
-            '<div class="shared-ui-error">The shared interface could not load. Please refresh the page.</div>';
+      });
     }
+
+    document.documentElement.classList.add('shared-ui-ready');
+
+    // Category pages: mirror their existing viewer count.
+    // Do not create additional presence records.
+    const existingCount = document.getElementById('viewerCount');
+    const heroCount = document.getElementById('heroOnlineCount');
+
+    if (existingCount && heroCount) {
+      const update = () => {
+        heroCount.textContent =
+          existingCount.textContent.trim() || '0';
+      };
+
+      update();
+
+      new MutationObserver(update).observe(existingCount, {
+        childList: true,
+        characterData: true,
+        subtree: true
+      });
+    }
+
+  } catch (error) {
+    console.error('Multi Stream Hub UI:', error);
+
+    mount.innerHTML =
+      '<div class="shared-ui-error">' +
+      'The shared interface could not load. Please refresh the page.' +
+      '</div>';
+  }
 })();
-
-
-/* =====================================================
-   HOMEPAGE LIVE VIEWER COUNTER
-   Reads the existing Firebase users collection.
-   Does not write or modify presence data.
-   ===================================================== */
-
-async function loadHomeViewerCount() {
-    const countElement = document.getElementById('homeViewerCount');
-
-    if (!countElement) return;
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyBTPrDoxWQEWLLHsUuJbv6cQX1vUd6lQY",
-        authDomain: "multi-stream-ddb1d.firebaseapp.com",
-        databaseURL: "https://multi-stream-ddb1d-default-rtdb.firebaseio.com",
-        projectId: "multi-stream-ddb1d",
-        appId: "1:305282777189:web:50adf19c4bbb1c8005c68c"
-    };
-
-    function loadScript(src) {
-        return new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = src;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-    }
-
-    try {
-        if (!window.firebase) {
-            await loadScript(
-                'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js'
-            );
-        }
-
-        if (!window.firebase.database) {
-            await loadScript(
-                'https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js'
-            );
-        }
-
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-
-        const database = firebase.database();
-
-        database.ref('users').on('value', snapshot => {
-            const onlineCount = snapshot.numChildren();
-
-            const currentElement =
-                document.getElementById('homeViewerCount');
-
-            if (currentElement) {
-                currentElement.textContent = onlineCount;
-            }
-
-        }, error => {
-            console.error('Viewer counter error:', error);
-            countElement.textContent = '—';
-        });
-
-    } catch (error) {
-        console.error('Could not load Firebase viewer count:', error);
-        countElement.textContent = '—';
-    }
-}
