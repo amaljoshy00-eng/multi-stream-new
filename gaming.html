@@ -121,49 +121,66 @@
       border:none;
     }
 
-    /* Three-dot video menu */
+    /* Per-video controls stay hidden until the three-dot menu is tapped. */
+    /* Keep the player at the bottom of the card's stacking order. */
+    .card .player,
+    .card .player iframe{
+      position:relative;
+      z-index:0 !important;
+    }
+
     .card-menu-toggle{
-      position:absolute;
+      position:absolute !important;
       top:7px;
       right:7px;
-      z-index:2147483003;
+      z-index:30 !important;
       display:flex;
       align-items:center;
       justify-content:center;
-      width:36px;
-      height:36px;
+      width:40px;
+      height:40px;
       padding:0;
-      border:1px solid rgba(255,255,255,.28);
+      border:1px solid rgba(255,255,255,.35);
       border-radius:50%;
-      background:rgba(12,15,20,.78);
+      background:rgba(12,15,20,.92);
       color:#fff;
-      font-size:23px;
+      font-size:24px;
       line-height:1;
       cursor:pointer;
+      pointer-events:auto !important;
       touch-action:manipulation;
       -webkit-tap-highlight-color:transparent;
-      box-shadow:0 2px 8px rgba(0,0,0,.35);
+      box-shadow:0 2px 8px rgba(0,0,0,.45);
     }
 
     .controls{
-      position:absolute;
-      top:48px;
+      position:absolute !important;
+      top:54px;
       right:7px;
       left:auto;
-      z-index:2147483002;
+      z-index:29 !important;
       display:none;
-      gap:5px;
+      gap:6px;
       flex-wrap:wrap;
       align-items:center;
       max-width:calc(100% - 14px);
-      padding:7px;
-      border:1px solid rgba(255,255,255,.18);
+      padding:8px;
+      border:1px solid rgba(255,255,255,.22);
       border-radius:10px;
-      background:rgba(12,15,20,.94);
-      box-shadow:0 5px 18px rgba(0,0,0,.4);
+      background:rgba(12,15,20,.97);
+      box-shadow:0 5px 18px rgba(0,0,0,.5);
+      pointer-events:auto !important;
+      isolation:isolate;
     }
 
-    .card.is-controls-open .controls{display:flex;}
+    .card.is-controls-open .controls{display:flex !important;}
+    .controls button,
+    .controls input{
+      position:relative;
+      z-index:1;
+      pointer-events:auto !important;
+      touch-action:manipulation;
+    }
 
     .controls button{
       background:red;
@@ -418,6 +435,38 @@ function createPlayer(streamData,key){
     };
 
     controls.appendChild(volume);
+
+    const muteBtn = document.createElement("button");
+    muteBtn.type = "button";
+    muteBtn.innerText = "🔇 Mute";
+    muteBtn.title = "Mute / Unmute this video";
+
+    let isMuted = true;
+
+    muteBtn.addEventListener("click", function(event){
+      event.preventDefault();
+      event.stopPropagation();
+
+      if(!players[key]) return;
+
+      isMuted = !isMuted;
+
+      try{
+        if(isMuted){
+          players[key].mute();
+        }else{
+          players[key].unMute();
+          players[key].setVolume(Number(volume.value));
+        }
+
+        muteBtn.innerText = isMuted ? "🔊 Unmute" : "🔇 Mute";
+
+      }catch(err){}
+    });
+
+    // Players start muted to satisfy browser autoplay rules.
+    muteBtn.innerText = "🔊 Unmute";
+    controls.appendChild(muteBtn);
   }
 
   let fullBtn = document.createElement("button");
@@ -452,7 +501,7 @@ function createPlayer(streamData,key){
 
   div.appendChild(controls);
 
-  // Compact three-dot button
+  // Compact three-dot button keeps controls out of the viewing area.
   const cardMenuButton = document.createElement("button");
   cardMenuButton.type = "button";
   cardMenuButton.className = "card-menu-toggle";
@@ -461,9 +510,11 @@ function createPlayer(streamData,key){
   cardMenuButton.setAttribute("aria-label", "Open video options");
   cardMenuButton.setAttribute("aria-expanded", "false");
 
-  cardMenuButton.addEventListener("click", function(event){
-    event.preventDefault();
-    event.stopPropagation();
+  function toggleCardControls(event){
+    if(event){
+      event.preventDefault();
+      event.stopPropagation();
+    }
 
     const willOpen = !div.classList.contains("is-controls-open");
 
@@ -472,12 +523,23 @@ function createPlayer(streamData,key){
 
       const button = card.querySelector(".card-menu-toggle");
 
-      if(button) button.setAttribute("aria-expanded", "false");
+      if(button){
+        button.setAttribute("aria-expanded", "false");
+      }
     });
 
     if(willOpen){
       div.classList.add("is-controls-open");
       cardMenuButton.setAttribute("aria-expanded", "true");
+    }
+  }
+
+  // Pointer events register directly on touchscreens and mouse devices.
+  cardMenuButton.addEventListener("pointerup", toggleCardControls);
+
+  cardMenuButton.addEventListener("keydown", function(event){
+    if(event.key === "Enter" || event.key === " "){
+      toggleCardControls(event);
     }
   });
 
@@ -494,6 +556,8 @@ function createPlayer(streamData,key){
     const iframe = document.createElement("iframe");
     let kickMuted = true;
 
+    // Kick does not expose a dependable cross-origin player API here.
+    // Changing the embed URL is the supported fallback, but it reloads the player.
     const soundButton = document.createElement("button");
     soundButton.type = "button";
     soundButton.className = "kick-sound-toggle";
@@ -811,7 +875,7 @@ new Sortable(
 
   if (!grid) return;
 
-  // Create More button and panel once.
+  // Build the More button and panel only once.
   let moreButton = document.getElementById("moreButton");
   let morePanel = document.getElementById("morePanel");
 
@@ -830,6 +894,7 @@ new Sortable(
     document.body.appendChild(morePanel);
   }
 
+  // Move existing controls into the More panel.
   if (topControls && topControls.parentElement !== morePanel) {
     morePanel.appendChild(topControls);
   }
@@ -838,7 +903,7 @@ new Sortable(
     morePanel.appendChild(menuPanel);
   }
 
-  // More menu and mobile styling.
+  // Mobile layout and More button styling.
   if (!document.getElementById("multiStreamMoreFix")) {
 
     const style = document.createElement("style");
@@ -846,6 +911,7 @@ new Sortable(
 
     style.textContent = `
 
+      /* More menu: available on desktop and mobile */
       #moreButton {
         display:flex !important;
         position:fixed !important;
@@ -881,9 +947,7 @@ new Sortable(
         box-shadow:0 10px 30px rgba(0,0,0,.55);
       }
 
-      body.more-open #morePanel {
-        display:block !important;
-      }
+      body.more-open #morePanel { display:block !important; }
 
       #morePanel .top-controls,
       #morePanel .menu-panel {
@@ -917,21 +981,16 @@ new Sortable(
         border-radius:8px;
       }
 
-      .card .player {
-        position:relative;
-        z-index:1;
-      }
-
-      .card .player iframe {
-        position:relative;
-        z-index:1;
-      }
+      /* Keep the player below the three-dot menu and its opened controls. */
+      .card .player { position:relative !important; z-index:0 !important; }
+      .card .player iframe { position:relative !important; z-index:0 !important; }
+      .card .card-menu-toggle { z-index:30 !important; pointer-events:auto !important; }
 
       .card .controls.kick-controls {
-        top:48px !important;
+        top:54px !important;
         right:7px !important;
         left:auto !important;
-        z-index:2147483002 !important;
+        z-index:29 !important;
         display:none;
         opacity:1 !important;
         visibility:visible !important;
@@ -944,7 +1003,7 @@ new Sortable(
 
       .card .kick-controls button {
         position:relative !important;
-        z-index:2147483002 !important;
+        z-index:29 !important;
         display:inline-flex !important;
         align-items:center !important;
         justify-content:center !important;
@@ -1071,8 +1130,30 @@ new Sortable(
           min-height:0 !important;
         }
 
-        .controls {
-          opacity:1 !important;
+        .card-menu-toggle {
+          width:44px !important;
+          height:44px !important;
+          top:6px !important;
+          right:6px !important;
+          z-index:30 !important;
+          pointer-events:auto !important;
+        }
+
+        .card .controls {
+          top:56px !important;
+          right:6px !important;
+          z-index:29 !important;
+          max-width:calc(100% - 12px) !important;
+          pointer-events:auto !important;
+        }
+
+        .card .controls button {
+          min-height:42px !important;
+          min-width:42px !important;
+          padding:9px 11px !important;
+          font-size:14px !important;
+          pointer-events:auto !important;
+          touch-action:manipulation !important;
         }
 
         .footer {
@@ -1120,7 +1201,7 @@ new Sortable(
     document.head.appendChild(style);
   }
 
-  // Close a video menu when tapping outside it.
+  // Tap outside a video menu to close it; works with mouse and touch.
   document.addEventListener("click", function(event){
 
     if(
@@ -1166,7 +1247,7 @@ new Sortable(
 
   document.addEventListener("click", closeMore);
 
-  // Automatically fit visible streams on mobile.
+  // Automatically fit all visible streams inside the mobile screen.
   function fitStreamsToScreen() {
 
     if(window.innerWidth > 700) return;
@@ -1207,6 +1288,7 @@ new Sortable(
 
   }
 
+  // Detect new streams added through Firebase.
   const observer = new MutationObserver(() => {
     requestAnimationFrame(fitStreamsToScreen);
   });
@@ -1222,6 +1304,7 @@ new Sortable(
     setTimeout(fitStreamsToScreen, 150);
   });
 
+  // Handle global fullscreen.
   document.addEventListener("fullscreenchange", function(){
 
     const globalFullscreen =
@@ -1240,6 +1323,7 @@ new Sortable(
 
   });
 
+  // Run after Firebase has finished loading streams.
   [100, 500, 1200, 2200].forEach(delay => {
     setTimeout(fitStreamsToScreen, delay);
   });
