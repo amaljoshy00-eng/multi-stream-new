@@ -1,114 +1,54 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Multi Stream Hub</title>
+
+<link rel="stylesheet" href="common.css">
 <link rel="stylesheet" href="ui-ux.css">
-  <title>Multi Stream Hub</title>
-
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
-
-  <style>
-
-    body{
-      margin:0;
-      background:#111;
-      color:white;
-      font-family:Arial,sans-serif;
-
-      display:flex;
-      justify-content:center;
-      align-items:center;
-
-      min-height:100vh;
-    }
-
-    .container{
-      text-align:center;
-      width:90%;
-    }
-
-    h1{
-      margin-bottom:40px;
-      font-size:42px;
-    }
-
-    .grid{
-
-      display:grid;
-
-      grid-template-columns:
-      repeat(auto-fit,minmax(220px,1fr));
-
-      gap:20px;
-
-      max-width:900px;
-
-      margin:auto;
-    }
-
-    .card{
-
-      background:#1f1f1f;
-
-      padding:40px 20px;
-
-      border-radius:16px;
-
-      cursor:pointer;
-
-      transition:0.3s;
-
-      font-size:24px;
-
-      font-weight:bold;
-    }
-
-    .card:hover{
-
-      transform:scale(1.05);
-
-      background:red;
-
-    }
-
-  </style>
 
 </head>
 
 <body>
-  <div id="shared-ui"></div>
 
-<div class="container">
+<!-- CENTRAL SHARED UI -->
+<div id="shared-ui"></div>
 
-  <h1>🔥 Multi Stream Hub</h1>
+<!-- HOMEPAGE CONTENT -->
+<main class="home-wrap">
 
-  <div class="grid">
+    <section class="home-intro">
 
-    <div class="card"
-         onclick="location.href='news.html'">
-      📰 News
+        <div>
+            <h1>
+                Your streams.<br>
+                <span>All in one place.</span>
+            </h1>
+
+            <p>
+                Choose a category from the navigation to watch
+                and manage your live streams.
+            </p>
+        </div>
+
+    </section>
+
+    <div class="home-note">
+        Welcome to Multi Stream Hub. Use the navigation above
+        to open Gaming, Sports, Music or News.
+        Your stream controls, three-dot menus and global More
+        options remain available on their respective pages.
     </div>
 
-    <div class="card"
-         onclick="location.href='gaming.html'">
-      🎮 Gaming
-    </div>
+</main>
 
-    <div class="card"
-         onclick="location.href='sports.html'">
-      ⚽ Sports
-    </div>
+<footer class="footer">
+    Multi Stream Hub · Watch Multiple Live Streams Together
+</footer>
 
-    <div class="card"
-         onclick="location.href='music.html'">
-      🎵 Music
-    </div>
-
-  </div>
-
-</div>
-  <script src="ui-ux.js"></script>
+<script src="ui-ux.js"></script>
 
 </body>
 </html>
