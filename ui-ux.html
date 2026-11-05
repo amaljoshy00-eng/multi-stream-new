@@ -1,1 +1,52 @@
+<!-- CENTRAL UI TEMPLATE -->
+<template id="multiStreamShell">
 
+<header class="hub-nav">
+
+  <a class="hub-brand" href="index.html">
+    <span class="hub-logo">▶</span>
+
+    <span class="hub-brand-copy">
+      <strong>Multi Stream Hub</strong>
+      <small>Watch Multiple Live Streams Together</small>
+    </span>
+  </a>
+
+  <nav class="hub-links">
+    <a data-page="index.html" href="index.html">⌂ <span>Home</span></a>
+    <a data-page="gaming.html" href="gaming.html">🎮 <span>Gaming</span></a>
+    <a data-page="sports.html" href="sports.html">🏆 <span>Sports</span></a>
+    <a data-page="music.html" href="music.html">♫ <span>Music</span></a>
+    <a data-page="news.html" href="news.html">▤ <span>News</span></a>
+  </nav>
+
+  <button class="hub-search"
+          type="button"
+          onclick="document.getElementById('link')?.focus()">
+    ⌕
+  </button>
+
+  <button class="hub-admin"
+          type="button"
+          onclick="alert('Admin login will be added in the authentication update.')">
+    ♙ <span>Admin Login</span>
+  </button>
+
+</header>
+
+<section class="hub-hero">
+
+  <div class="hub-hero-copy">
+    <h1>Live <span>Multi-Stream</span></h1>
+    <p>Watch and control multiple live streams in one place</p>
+  </div>
+
+  <div class="hub-status">
+    <i class="status-dot"></i>
+    LIVE VIEWER
+    <b id="heroOnlineCount">—</b>
+  </div>
+
+</section>
+
+</template>
