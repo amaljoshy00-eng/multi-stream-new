@@ -3,11 +3,9 @@
 <head>
   <link rel="stylesheet" href="common.css">
   <title>Advanced Multi Stream</title>
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-
     body{
       background:#111;
       color:white;
@@ -18,24 +16,10 @@
       overflow-y:auto;
     }
 
-    .light{
-      background:#f5f5f5;
-      color:#111;
-    }
-
-    .light .card{
-      background:#fff;
-    }
-
-    .light .top-bar{
-      background:#fff;
-      color:#111;
-    }
-
-    .light .footer{
-      background:#ddd;
-      color:#111;
-    }
+    .light{background:#f5f5f5;color:#111;}
+    .light .card{background:#fff;}
+    .light .top-bar{background:#fff;color:#111;}
+    .light .footer{background:#ddd;color:#111;}
 
     .top-bar{
       background:#000;
@@ -51,16 +35,13 @@
       outline:none;
     }
 
-    button{
-      cursor:pointer;
-    }
+    button{cursor:pointer;}
 
     .top-controls{
       position:fixed;
       top:15px;
       right:15px;
       z-index:9999999;
-
       display:flex;
       gap:10px;
       flex-wrap:wrap;
@@ -80,7 +61,6 @@
       top:70px;
       right:15px;
       z-index:9999999;
-
       display:flex;
       flex-direction:row;
       align-items:flex-start;
@@ -146,18 +126,14 @@
       top:5px;
       left:5px;
       z-index:99999;
-
       display:flex;
       gap:4px;
       flex-wrap:wrap;
-
       opacity:0;
       transition:0.3s;
     }
 
-    .card:hover .controls{
-      opacity:1;
-    }
+    .card:hover .controls{opacity:1;}
 
     .controls button{
       background:red;
@@ -168,14 +144,8 @@
       font-size:12px;
     }
 
-    .volume-slider{
-      width:70px;
-    }
-
-    .favorite{
-      background:gold !important;
-      color:black !important;
-    }
+    .volume-slider{width:70px;}
+    .favorite{background:gold !important;color:black !important;}
 
     .footer{
       position:fixed;
@@ -189,10 +159,7 @@
     }
 
     @media(max-width:600px){
-
-      input{
-        width:90%;
-      }
+      input{width:90%;}
 
       .top-controls{
         top:auto;
@@ -206,17 +173,206 @@
         right:10px;
       }
 
-      .controls{
-        opacity:1;
-      }
-
+      .controls{opacity:1;}
     }
 
+    /* Video controls outside YouTube iframe for Android Chrome */
+    .video-overlay{
+      position:fixed !important;
+      z-index:2147483647 !important;
+      pointer-events:none !important;
+      overflow:visible !important;
+    }
+
+    .video-overlay .card-menu-toggle,
+    .video-overlay .controls{
+      pointer-events:auto !important;
+      touch-action:manipulation !important;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    .video-overlay .card-menu-toggle{
+      position:absolute !important;
+      top:7px !important;
+      right:7px !important;
+      z-index:2147483000 !important;
+      width:44px !important;
+      height:44px !important;
+      display:flex !important;
+      align-items:center;
+      justify-content:center;
+      padding:0 !important;
+      border:1px solid rgba(255,255,255,.35) !important;
+      border-radius:50% !important;
+      background:rgba(12,15,20,.94) !important;
+      color:#fff !important;
+      font-size:25px !important;
+      line-height:1 !important;
+      box-shadow:0 2px 8px rgba(0,0,0,.45);
+      -webkit-appearance:none;
+      appearance:none;
+    }
+
+    .video-overlay .controls{
+      position:absolute !important;
+      top:56px !important;
+      right:7px !important;
+      left:auto !important;
+      z-index:2147482999 !important;
+      display:none !important;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:7px !important;
+      max-width:calc(100% - 14px);
+      padding:8px !important;
+      border:1px solid rgba(255,255,255,.2);
+      border-radius:10px;
+      background:rgba(12,15,20,.97);
+      box-shadow:0 5px 18px rgba(0,0,0,.5);
+      opacity:1 !important;
+      visibility:visible !important;
+    }
+
+    .video-overlay.is-controls-open .controls{
+      display:flex !important;
+    }
+
+    .video-overlay .controls button{
+      min-width:42px;
+      min-height:42px;
+      padding:8px 11px !important;
+      border:0;
+      border-radius:7px;
+      background:#d92727;
+      color:#fff;
+      font-size:13px;
+      pointer-events:auto !important;
+      touch-action:manipulation !important;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    .video-overlay .controls .volume-slider{
+      width:82px;
+      min-height:36px;
+      padding:0;
+      pointer-events:auto !important;
+      touch-action:pan-x !important;
+    }
+
+    .video-overlay .controls .favorite{
+      background:gold !important;
+      color:#111 !important;
+    }
+
+    #moreButton{
+      display:flex !important;
+      position:fixed !important;
+      top:12px !important;
+      right:12px !important;
+      z-index:2147483001 !important;
+      align-items:center;
+      justify-content:center;
+      min-height:40px;
+      padding:8px 13px !important;
+      border:1px solid rgba(255,255,255,.2);
+      border-radius:8px;
+      background:linear-gradient(180deg,#343a44,#20242b);
+      color:#fff;
+      font-weight:700;
+      font-size:13px;
+      box-shadow:0 3px 12px rgba(0,0,0,.35);
+      touch-action:manipulation;
+    }
+
+    #morePanel{
+      display:none;
+      position:fixed !important;
+      top:60px !important;
+      right:12px !important;
+      z-index:2147483000 !important;
+      width:min(520px,calc(100vw - 24px));
+      max-height:75vh;
+      overflow-y:auto;
+      padding:12px;
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:12px;
+      background:rgba(20,23,29,.98);
+      box-shadow:0 10px 30px rgba(0,0,0,.55);
+    }
+
+    body.more-open #morePanel{display:block !important;}
+
+    #morePanel .top-controls,
+    #morePanel .menu-panel{
+      position:static !important;
+      inset:auto !important;
+      display:flex !important;
+      flex-wrap:wrap;
+      justify-content:flex-start;
+      align-items:center;
+      gap:7px !important;
+      width:100%;
+      margin:0 0 9px !important;
+      padding:0 !important;
+    }
+
+    #morePanel .top-controls button,
+    #morePanel .menu-panel button{
+      min-height:38px;
+      padding:7px 11px !important;
+      border-radius:8px;
+      font-size:12px;
+    }
+
+    #morePanel .dropdown-menu{
+      position:static !important;
+      max-height:40vh;
+      overflow:auto;
+      margin:5px 0 8px;
+      padding:7px;
+      background:#15191f;
+      border-radius:8px;
+    }
+
+    @media(max-width:700px){
+      #moreButton{
+        top:7px !important;
+        right:7px !important;
+        min-height:38px;
+        padding:7px 11px !important;
+      }
+
+      #morePanel{
+        top:51px !important;
+        right:7px !important;
+        left:7px !important;
+        width:auto;
+        max-height:70vh;
+      }
+
+      .video-overlay .card-menu-toggle{
+        top:5px !important;
+        right:5px !important;
+        width:46px !important;
+        height:46px !important;
+      }
+
+      .video-overlay .controls{
+        top:57px !important;
+        right:5px !important;
+        max-width:calc(100% - 10px) !important;
+      }
+
+      .video-overlay .controls button{
+        min-width:46px;
+        min-height:46px;
+        padding:10px 12px !important;
+        font-size:14px;
+      }
+    }
   </style>
 </head>
 
-<body>
-  
 <body>
 
 <button onclick="location.href='index.html'"
@@ -235,99 +391,50 @@ cursor:pointer;">
 ⬅ Home
 </button>
 
-<!-- Your existing page content continues here -->
-
 <div class="top-bar">
-
   <h2>🔥 Advanced Multi Stream</h2>
-
   <input id="link" placeholder="Paste YouTube link">
-
   <button onclick="addStream()">Add</button>
 
   <h3>
     🟢 Online:
     <span id="viewerCount">0</span>
   </h3>
-
 </div>
 
 <div class="top-controls">
-
   <button onclick="playAll()">▶ Play</button>
-
   <button onclick="pauseAll()">⏸ Pause</button>
-
   <button onclick="muteAll()">🔇 Mute</button>
-
   <button onclick="unmuteAll()">🔊 Unmute</button>
-
   <button onclick="toggleTheme()">🌙 Theme</button>
-
-  <button onclick="toggleGlobalFullscreen()">
-    ⛶ Full
-  </button>
-
+  <button onclick="toggleGlobalFullscreen()">⛶ Full</button>
 </div>
 
 <div class="menu-panel">
-
   <div>
-
-    <button onclick="toggleGridMenu()">
-      🟦 Grid
-    </button>
+    <button onclick="toggleGridMenu()">🟦 Grid</button>
 
     <div id="gridMenu" class="dropdown-menu">
-
       <button onclick="setGridMode(1)">1×1</button>
-
       <button onclick="setGridMode(4)">2×2</button>
-
       <button onclick="setGridMode(9)">3×3</button>
-
       <button onclick="enableAutoGrid()">Auto</button>
-
     </div>
-
   </div>
 
   <div>
-
-    <button onclick="toggleSettingsMenu()">
-      ⚙ Settings
-    </button>
+    <button onclick="toggleSettingsMenu()">⚙ Settings</button>
 
     <div id="settingsMenu" class="dropdown-menu">
-
-      <button onclick="setGlobalQuality('default')">
-        Auto Quality
-      </button>
-
-      <button onclick="setGlobalQuality('small')">
-        144p
-      </button>
-
-      <button onclick="setGlobalQuality('medium')">
-        360p
-      </button>
-
-      <button onclick="setGlobalQuality('large')">
-        480p
-      </button>
-
-      <button onclick="setGlobalQuality('hd720')">
-        720p
-      </button>
-
-      <button onclick="setGlobalQuality('hd1080')">
-        1080p
-      </button>
-
+      <button onclick="setGlobalQuality('default')">Auto Quality</button>
+      <button onclick="setGlobalQuality('small')">144p</button>
+      <button onclick="setGlobalQuality('medium')">360p</button>
+      <button onclick="setGlobalQuality('large')">480p</button>
+      <button onclick="setGlobalQuality('hd720')">720p</button>
+      <button onclick="setGlobalQuality('hd1080')">1080p</button>
     </div>
-
   </div>
-
 </div>
 
 <div class="grid" id="grid"></div>
@@ -338,30 +445,88 @@ cursor:pointer;">
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
 <script src="https://www.youtube.com/iframe_api"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 <script>
-
 const firebaseConfig = {
-
-  apiKey: "AIzaSyBTPrDoxWQdEWLLHsUuJbv4cQX1vUd6lQY",
-
+  apiKey: "AIzaSyBTPrDoxWQdEWLLHsUuJbv6cQX1vUd6lQY",
   authDomain: "multi-stream-ddb1d.firebaseapp.com",
-
   databaseURL: "https://multi-stream-ddb1d-default-rtdb.firebaseio.com",
-
   projectId: "multi-stream-ddb1d",
-
   appId: "1:305282777189:web:50adf19c4bbb1c8005c68c"
-
 };
 
 firebase.initializeApp(firebaseConfig);
 
 const db = firebase.database();
+
+const videoOverlayPairs = new Map();
+
+function updateVideoOverlay(card, overlay){
+  if(!card || !overlay) return;
+
+  if(!card.isConnected){
+    overlay.remove();
+    videoOverlayPairs.delete(card);
+    return;
+  }
+
+  const rect = card.getBoundingClientRect();
+
+  const visible =
+    getComputedStyle(card).display !== "none" &&
+    rect.width > 0 &&
+    rect.height > 0;
+
+  overlay.style.display = visible ? "block" : "none";
+
+  if(!visible) return;
+
+  overlay.style.position = "fixed";
+  overlay.style.left = rect.left + "px";
+  overlay.style.top = rect.top + "px";
+  overlay.style.width = rect.width + "px";
+  overlay.style.height = rect.height + "px";
+}
+
+function updateAllVideoOverlays(){
+  videoOverlayPairs.forEach((overlay, card) => {
+    updateVideoOverlay(card, overlay);
+  });
+}
+
+window.addEventListener("scroll", updateAllVideoOverlays, true);
+window.addEventListener("resize", updateAllVideoOverlays);
+
+window.addEventListener("orientationchange", () => {
+  setTimeout(updateAllVideoOverlays, 150);
+});
+
+document.addEventListener("fullscreenchange", () => {
+  requestAnimationFrame(updateAllVideoOverlays);
+});
+
+document.addEventListener("pointerdown", function(event){
+  if(
+    event.target.closest &&
+    event.target.closest(
+      ".video-overlay .card-menu-toggle, .video-overlay .controls"
+    )
+  ) return;
+
+  document.querySelectorAll(".video-overlay.is-controls-open").forEach(overlay => {
+    overlay.classList.remove("is-controls-open");
+
+    const button = overlay.querySelector(".card-menu-toggle");
+
+    if(button){
+      button.setAttribute("aria-expanded", "false");
+    }
+  });
+}, true);
+
+const STREAM_PATH = "streams";
 
 let apiReady = false;
 
@@ -370,51 +535,37 @@ function onYouTubeIframeAPIReady(){
 }
 
 let players = {};
-
 let manualGridEnabled = false;
-
 let maxVisibleStreams = 9;
 
-const userId =
-  Math.random().toString(36).substring(2);
-
-const userRef =
-  db.ref("users/" + userId);
+const userId = Math.random().toString(36).substring(2);
+const userRef = db.ref("users/" + userId);
 
 db.ref(".info/connected").on("value", snap => {
-
   if(snap.val()){
-
     userRef.set(true);
-
     userRef.onDisconnect().remove();
-
   }
-
 });
 
 db.ref("users").on("value", snap => {
-
-  document.getElementById("viewerCount")
-    .innerText = snap.numChildren();
-
+  document.getElementById("viewerCount").innerText =
+    snap.numChildren();
 });
 
-db.ref("streams").on("value", snap => {
+db.ref(STREAM_PATH).on("value", snap => {
+  videoOverlayPairs.forEach(overlay => overlay.remove());
+  videoOverlayPairs.clear();
 
-  const grid =
-    document.getElementById("grid");
+  const grid = document.getElementById("grid");
 
   Object.values(players).forEach(player => {
-
     if(player.destroy){
       player.destroy();
     }
-
   });
 
   players = {};
-
   grid.innerHTML = "";
 
   if(!manualGridEnabled){
@@ -422,339 +573,346 @@ db.ref("streams").on("value", snap => {
   }
 
   snap.forEach(child => {
-
     createPlayer(child.val(), child.key);
-
   });
 
   applyVisibility();
-
 });
 
 function addStream(){
-
-  let url =
-    document.getElementById("link").value.trim();
-
+  let url = document.getElementById("link").value.trim();
   let id = getId(url);
 
   if(!id){
-
     alert("Invalid YouTube Link");
-
     return;
-
   }
 
-  db.ref("streams").once("value", snap => {
-
+  db.ref(STREAM_PATH).once("value", snap => {
     if(snap.numChildren() >= 9){
-
       alert("Maximum 9 streams");
-
       return;
-
     }
 
-    db.ref("streams").push(id);
-
+    db.ref(STREAM_PATH).push(id);
     document.getElementById("link").value = "";
-
   });
-
 }
 
 function createPlayer(id,key){
-
   if(!apiReady){
-
-    setTimeout(() => {
-
-      createPlayer(id,key);
-
-    },500);
-
+    setTimeout(() => createPlayer(id,key),500);
     return;
-
   }
 
-  const grid =
-    document.getElementById("grid");
+  const grid = document.getElementById("grid");
 
-  let div =
-    document.createElement("div");
+  const card = document.createElement("div");
+  card.className = "card";
 
-  div.className = "card";
-
-  let playerDiv =
-    document.createElement("div");
-
+  const playerDiv = document.createElement("div");
   playerDiv.className = "player";
-
   playerDiv.id = "player-" + key;
 
-  div.appendChild(playerDiv);
+  card.appendChild(playerDiv);
 
-  let controls =
-    document.createElement("div");
+  const overlay = document.createElement("div");
+  overlay.className = "video-overlay";
 
+  overlay.style.cssText =
+    "position:fixed;z-index:2147483647;pointer-events:none;overflow:visible;";
+
+  document.body.appendChild(overlay);
+  videoOverlayPairs.set(card, overlay);
+
+  const controls = document.createElement("div");
   controls.className = "controls";
 
-  let volume =
-    document.createElement("input");
-
+  const volume = document.createElement("input");
   volume.type = "range";
-
   volume.min = 0;
-
   volume.max = 100;
-
   volume.value = 100;
-
   volume.className = "volume-slider";
+  volume.title = "Volume";
+  volume.setAttribute("aria-label", "Video volume");
 
-  volume.oninput = () => {
-
+  volume.addEventListener("input", () => {
     if(players[key]){
-      players[key].setVolume(volume.value);
+      try{
+        players[key].setVolume(Number(volume.value));
+      }catch(err){}
     }
-
-  };
+  });
 
   controls.appendChild(volume);
 
-  /* ⛶ FULLSCREEN */
+  const muteBtn = document.createElement("button");
+  muteBtn.type = "button";
 
-  let fullBtn =
-    document.createElement("button");
+  let muted = true;
 
-  fullBtn.innerText = "⛶";
+  muteBtn.textContent = "🔊 Unmute";
+  muteBtn.title = "Mute or unmute this video";
 
-  fullBtn.onclick = () => {
+  muteBtn.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const player = players[key];
+    if(!player) return;
+
+    muted = !muted;
+
+    try{
+      if(muted){
+        player.mute();
+        muteBtn.textContent = "🔊 Unmute";
+      }else{
+        player.unMute();
+        player.setVolume(Number(volume.value));
+        muteBtn.textContent = "🔇 Mute";
+      }
+    }catch(err){}
+  });
+
+  controls.appendChild(muteBtn);
+
+  const fullBtn = document.createElement("button");
+  fullBtn.type = "button";
+  fullBtn.textContent = "⛶";
+  fullBtn.title = "Fullscreen";
+
+  fullBtn.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
 
     if(!document.fullscreenElement){
-
-      div.requestFullscreen();
-
+      if(card.requestFullscreen){
+        card.requestFullscreen();
+      }
     }else{
-
       document.exitFullscreen();
-
     }
-
-  };
+  });
 
   controls.appendChild(fullBtn);
 
-  let favBtn =
-    document.createElement("button");
+  const favBtn = document.createElement("button");
+  favBtn.type = "button";
+  favBtn.textContent = "⭐";
+  favBtn.title = "Favourite";
 
-  favBtn.innerText = "⭐";
-
-  favBtn.onclick = () => {
+  favBtn.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
     favBtn.classList.toggle("favorite");
-  };
+  });
 
   controls.appendChild(favBtn);
 
-  let delBtn =
-    document.createElement("button");
+  const delBtn = document.createElement("button");
+  delBtn.type = "button";
+  delBtn.textContent = "✕";
+  delBtn.title = "Delete stream";
 
-  delBtn.innerText = "X";
-
-  delBtn.onclick = () => {
-    db.ref("streams/" + key).remove();
-  };
+  delBtn.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    db.ref(STREAM_PATH + "/" + key).remove();
+  });
 
   controls.appendChild(delBtn);
 
-  div.appendChild(controls);
+  overlay.appendChild(controls);
 
-  grid.appendChild(div);
+  const menuButton = document.createElement("button");
+  menuButton.type = "button";
+  menuButton.className = "card-menu-toggle";
+  menuButton.textContent = "⋮";
+  menuButton.title = "Video options";
+  menuButton.setAttribute("aria-label", "Open video options");
+  menuButton.setAttribute("aria-expanded", "false");
 
-  players[key] =
-    new YT.Player(playerDiv.id, {
+  overlay.appendChild(menuButton);
 
-      width:"100%",
-      height:"100%",
-      videoId:id,
+  function toggleControls(event){
+    if(event){
+      event.preventDefault();
+      event.stopPropagation();
+    }
 
-      playerVars:{
-        autoplay:1,
-        mute:1,
-        controls:1,
-        playsinline:1,
-        enablejsapi:1
-      },
+    const shouldOpen =
+      !overlay.classList.contains("is-controls-open");
 
-      events:{
+    document.querySelectorAll(".video-overlay.is-controls-open").forEach(other => {
+      other.classList.remove("is-controls-open");
 
-        onReady:function(event){
-          event.target.playVideo();
-        }
+      const otherButton = other.querySelector(".card-menu-toggle");
 
+      if(otherButton){
+        otherButton.setAttribute("aria-expanded","false");
       }
-
     });
 
+    if(shouldOpen){
+      overlay.classList.add("is-controls-open");
+      menuButton.setAttribute("aria-expanded","true");
+    }
+  }
+
+  if(window.PointerEvent){
+    menuButton.addEventListener(
+      "pointerdown",
+      toggleControls,
+      {passive:false}
+    );
+
+    menuButton.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+  }else{
+    menuButton.addEventListener(
+      "touchstart",
+      toggleControls,
+      {passive:false}
+    );
+
+    menuButton.addEventListener("mousedown", toggleControls);
+  }
+
+  menuButton.addEventListener("keydown", event => {
+    if(event.key === "Enter" || event.key === " "){
+      toggleControls(event);
+    }
+  });
+
+  controls.addEventListener("click", event => {
+    event.stopPropagation();
+  });
+
+  controls.addEventListener("pointerdown", event => {
+    event.stopPropagation();
+  });
+
+  grid.appendChild(card);
+
+  requestAnimationFrame(() => {
+    updateVideoOverlay(card,overlay);
+  });
+
+  players[key] = new YT.Player(playerDiv.id, {
+    width:"100%",
+    height:"100%",
+    videoId:id,
+
+    playerVars:{
+      autoplay:1,
+      mute:1,
+      controls:1,
+      playsinline:1,
+      enablejsapi:1
+    },
+
+    events:{
+      onReady:function(event){
+        event.target.mute();
+        event.target.playVideo();
+      }
+    }
+  });
 }
 
 function playAll(){
-
   Object.values(players).forEach(player => {
-
     try{
       player.playVideo();
     }catch(err){}
-
   });
-
 }
 
 function pauseAll(){
-
   Object.values(players).forEach(player => {
-
     try{
       player.pauseVideo();
     }catch(err){}
-
   });
-
 }
 
 function muteAll(){
-
   Object.values(players).forEach(player => {
-
     try{
       player.mute();
     }catch(err){}
-
   });
-
 }
 
 function unmuteAll(){
-
   Object.values(players).forEach(player => {
-
     try{
       player.unMute();
     }catch(err){}
-
   });
-
 }
 
 function toggleTheme(){
   document.body.classList.toggle("light");
 }
 
-/* 🌐 GLOBAL FULLSCREEN */
-
 function toggleGlobalFullscreen(){
-
   if(!document.fullscreenElement){
-
     document.documentElement.requestFullscreen();
-
   }else{
-
     document.exitFullscreen();
-
   }
-
 }
 
 function toggleGridMenu(){
-
-  const menu =
-    document.getElementById("gridMenu");
+  const menu = document.getElementById("gridMenu");
 
   menu.style.display =
-    menu.style.display === "flex"
-      ? "none"
-      : "flex";
-
+    menu.style.display === "flex" ? "none" : "flex";
 }
 
 function toggleSettingsMenu(){
-
-  const menu =
-    document.getElementById("settingsMenu");
+  const menu = document.getElementById("settingsMenu");
 
   menu.style.display =
-    menu.style.display === "flex"
-      ? "none"
-      : "flex";
-
+    menu.style.display === "flex" ? "none" : "flex";
 }
 
 function updateGrid(count){
-
-  const grid =
-    document.getElementById("grid");
+  const grid = document.getElementById("grid");
 
   if(count === 1){
-
     grid.style.gridTemplateColumns = "1fr";
-
+  }else if(count <= 4){
+    grid.style.gridTemplateColumns = "repeat(2,1fr)";
+  }else{
+    grid.style.gridTemplateColumns = "repeat(3,1fr)";
   }
-
-  else if(count <= 4){
-
-    grid.style.gridTemplateColumns =
-      "repeat(2,1fr)";
-
-  }
-
-  else{
-
-    grid.style.gridTemplateColumns =
-      "repeat(3,1fr)";
-
-  }
-
 }
 
 function setGridMode(limit){
-
   manualGridEnabled = true;
-
   maxVisibleStreams = limit;
 
-  const grid =
-    document.getElementById("grid");
+  const grid = document.getElementById("grid");
 
   if(limit === 1){
-
     grid.style.gridTemplateColumns = "1fr";
-
-  }
-
-  else if(limit === 4){
-
-    grid.style.gridTemplateColumns =
-      "repeat(2,1fr)";
-
-  }
-
-  else{
-
-    grid.style.gridTemplateColumns =
-      "repeat(3,1fr)";
-
+  }else if(limit === 4){
+    grid.style.gridTemplateColumns = "repeat(2,1fr)";
+  }else{
+    grid.style.gridTemplateColumns = "repeat(3,1fr)";
   }
 
   applyVisibility();
-
 }
 
 function enableAutoGrid(){
-
   manualGridEnabled = false;
-
   maxVisibleStreams = 9;
 
   updateGrid(
@@ -762,89 +920,62 @@ function enableAutoGrid(){
   );
 
   applyVisibility();
-
 }
 
 function applyVisibility(){
-
-  const cards =
-    document.querySelectorAll(".card");
+  const cards = document.querySelectorAll(".card");
 
   cards.forEach((card,index) => {
-
     card.style.display =
-      index < maxVisibleStreams
-        ? "block"
-        : "none";
-
+      index < maxVisibleStreams ? "block" : "none";
   });
-
 }
 
 function setGlobalQuality(quality){
-
   document
     .querySelectorAll("#settingsMenu button")
     .forEach(btn => {
-
       btn.classList.remove("active-quality");
-
     });
 
   event.target.classList.add("active-quality");
 
   Object.values(players).forEach(player => {
-
     try{
-
-      player.setPlaybackQualityRange(
-        quality,
-        quality
-      );
-
+      player.setPlaybackQualityRange(quality,quality);
       player.setPlaybackQuality(quality);
-
       player.playVideo();
-
     }catch(err){
-
       console.log(err);
-
     }
-
   });
-
 }
 
 function getId(url){
-
   let r =
     /(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/|embed\/)|youtu\.be\/)([^?&#]+)/;
 
   let m = url.match(r);
 
   return m ? m[1] : null;
-
 }
 
 new Sortable(
   document.getElementById("grid"),
   {
-    animation:150
+    animation:150,
+    onEnd:() => requestAnimationFrame(updateAllVideoOverlays)
   }
 );
-
 </script>
-  <script>
-(function () {
 
+<script>
+(function () {
   const topControls = document.querySelector(".top-controls");
   const menuPanel = document.querySelector(".menu-panel");
   const grid = document.getElementById("grid");
 
-  if (!grid) return;
-
-  // CREATE MORE BUTTON
+  if(!grid) return;
 
   const moreButton = document.createElement("button");
 
@@ -853,29 +984,21 @@ new Sortable(
   moreButton.textContent = "☰ More";
   moreButton.setAttribute("aria-expanded", "false");
 
-  // CREATE MORE PANEL
-
   const morePanel = document.createElement("div");
-
   morePanel.id = "morePanel";
 
-  // MOVE EXISTING BUTTONS INTO MORE PANEL
-
-  if (topControls) {
+  if(topControls){
     morePanel.appendChild(topControls);
   }
 
-  if (menuPanel) {
+  if(menuPanel){
     morePanel.appendChild(menuPanel);
   }
 
   document.body.appendChild(moreButton);
   document.body.appendChild(morePanel);
 
-  // OPEN AND CLOSE MORE
-
-  moreButton.addEventListener("click", function (event) {
-
+  moreButton.addEventListener("click", function(event){
     event.stopPropagation();
 
     const isOpen =
@@ -885,26 +1008,19 @@ new Sortable(
       "aria-expanded",
       String(isOpen)
     );
-
   });
 
-  morePanel.addEventListener("click", function (event) {
+  morePanel.addEventListener("click", function(event){
     event.stopPropagation();
   });
 
-  document.addEventListener("click", function () {
-
+  document.addEventListener("click", function(){
     document.body.classList.remove("more-open");
-
     moreButton.setAttribute("aria-expanded", "false");
-
   });
 
-  // AUTOMATICALLY FIT STREAMS TO MOBILE SCREEN
-
-  function fitStreamsToScreen() {
-
-    if (window.innerWidth > 700) return;
+  function fitStreamsToScreen(){
+    if(window.innerWidth > 700) return;
 
     const cards = Array.from(
       grid.querySelectorAll(".card")
@@ -914,15 +1030,15 @@ new Sortable(
 
     const count = cards.length;
 
-    if (!count) return;
+    if(!count) return;
 
     let columns;
 
-    if (count === 1) {
+    if(count === 1){
       columns = 1;
-    } else if (count <= 4) {
+    }else if(count <= 4){
       columns = 2;
-    } else {
+    }else{
       columns = 3;
     }
 
@@ -937,36 +1053,24 @@ new Sortable(
     grid.style.gridAutoRows = "minmax(0, 1fr)";
 
     cards.forEach(card => {
-
       card.style.minHeight = "0";
       card.style.height = "100%";
-
     });
 
+    requestAnimationFrame(updateAllVideoOverlays);
   }
 
-  // WATCH FOR NEW OR REMOVED STREAMS
-
-  const observer = new MutationObserver(
-    fitStreamsToScreen
-  );
+  const observer = new MutationObserver(fitStreamsToScreen);
 
   observer.observe(grid, {
-    childList: true,
-    subtree: false
+    childList:true,
+    subtree:false
   });
 
   window.addEventListener("resize", fitStreamsToScreen);
+  window.addEventListener("orientationchange", fitStreamsToScreen);
 
-  window.addEventListener(
-    "orientationchange",
-    fitStreamsToScreen
-  );
-
-  // FULLSCREEN MODE
-
-  function updateGlobalFullscreenState() {
-
+  function updateGlobalFullscreenState(){
     const isGlobalFullscreen =
       document.fullscreenElement === document.documentElement;
 
@@ -975,16 +1079,12 @@ new Sortable(
       isGlobalFullscreen
     );
 
-    if (!isGlobalFullscreen) {
-
+    if(!isGlobalFullscreen){
       document.body.classList.remove("more-open");
-
       moreButton.setAttribute("aria-expanded", "false");
-
     }
 
     fitStreamsToScreen();
-
   }
 
   document.addEventListener(
@@ -992,14 +1092,9 @@ new Sortable(
     updateGlobalFullscreenState
   );
 
-  // INITIAL LAYOUT
-
   requestAnimationFrame(fitStreamsToScreen);
-
   setTimeout(fitStreamsToScreen, 500);
-
   setTimeout(fitStreamsToScreen, 1500);
-
 })();
 </script>
 
