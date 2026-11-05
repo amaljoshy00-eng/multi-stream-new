@@ -369,6 +369,10 @@ function createPlayer(streamData,key){
   let controls = document.createElement("div");
   controls.className = "controls";
 
+  if(platform === "kick"){
+    controls.classList.add("kick-controls");
+  }
+
   if(platform === "youtube"){
 
     let volume = document.createElement("input");
@@ -426,6 +430,49 @@ function createPlayer(streamData,key){
   if(platform === "kick" && kickChannel){
 
     const iframe = document.createElement("iframe");
+    let kickMuted = true;
+
+    // Changing Kick mute state reloads the iframe.
+    // Kick does not expose a supported external mute/unmute JavaScript API.
+    function setKickMuteState(muted){
+      kickMuted = muted;
+
+      const params = new URLSearchParams({
+        autoplay: "true",
+        muted: String(kickMuted)
+      });
+
+      iframe.src = "https://player.kick.com/" +
+        encodeURIComponent(kickChannel) + "?" + params.toString();
+
+      soundButton.textContent = kickMuted ? "🔊 Unmute" : "🔇 Mute";
+      soundButton.title = kickMuted
+        ? "Unmute Kick stream (restarts the player)"
+        : "Mute Kick stream (restarts the player)";
+
+      soundButton.classList.toggle("is-unmuted", !kickMuted);
+    }
+
+    const soundButton = document.createElement("button");
+    soundButton.type = "button";
+    soundButton.className = "kick-sound-toggle";
+    soundButton.textContent = "🔊 Unmute";
+    soundButton.title = "Unmute Kick stream (restarts the player)";
+    soundButton.setAttribute("aria-label", "Unmute Kick stream");
+
+    soundButton.addEventListener("click", function(event){
+      event.preventDefault();
+      event.stopPropagation();
+
+      setKickMuteState(!kickMuted);
+
+      soundButton.setAttribute(
+        "aria-label",
+        kickMuted ? "Unmute Kick stream" : "Mute Kick stream"
+      );
+    });
+
+    controls.appendChild(soundButton);
 
     iframe.src = "https://player.kick.com/" +
       encodeURIComponent(kickChannel) +
@@ -701,6 +748,7 @@ new Sortable(
   if (!grid) return;
 
   let moreButton = document.getElementById('moreButton');
+
   if (!moreButton) {
     moreButton = document.createElement('button');
     moreButton.id = 'moreButton';
@@ -711,20 +759,25 @@ new Sortable(
   }
 
   let morePanel = document.getElementById('morePanel');
+
   if (!morePanel) {
     morePanel = document.createElement('div');
     morePanel.id = 'morePanel';
     document.body.appendChild(morePanel);
   }
 
-  // Move the existing controls; their original buttons and handlers remain intact.
-  if (topControls && topControls.parentElement !== morePanel) morePanel.appendChild(topControls);
-  if (menuPanel && menuPanel.parentElement !== morePanel) morePanel.appendChild(menuPanel);
+  if (topControls && topControls.parentElement !== morePanel) {
+    morePanel.appendChild(topControls);
+  }
+
+  if (menuPanel && menuPanel.parentElement !== morePanel) {
+    morePanel.appendChild(menuPanel);
+  }
 
   const style = document.createElement('style');
   style.id = 'multiStreamMoreFix';
+
   style.textContent = `
-    /* More menu works on desktop AND mobile */
     #moreButton {
       display:inline-flex !important;
       position:fixed !important;
@@ -762,7 +815,28 @@ new Sortable(
       box-sizing:border-box !important;
     }
 
-    body.more-open #morePanel { display:block !important; }
+    body.more-open #morePanel {
+      display:block !important;
+    }
+
+    .card .kick-controls {
+      opacity:1 !important;
+    }
+
+    .card .kick-sound-toggle {
+      background:#176b45 !important;
+      color:#fff !important;
+      border:1px solid rgba(255,255,255,.25) !important;
+      border-radius:7px !important;
+      padding:6px 9px !important;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 2px 8px rgba(0,0,0,.3);
+    }
+
+    .card .kick-sound-toggle.is-unmuted {
+      background:#9a5b13 !important;
+    }
 
     #morePanel .top-controls,
     #morePanel .menu-panel {
