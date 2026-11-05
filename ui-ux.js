@@ -3,7 +3,6 @@
 (async function loadMultiStreamSharedUI() {
 
   const mount = document.getElementById('shared-ui');
-
   if (!mount) return;
 
   const FIREBASE_CONFIG = {
@@ -21,7 +20,10 @@
       const existing = [...document.scripts].find(s => s.src === src);
 
       if (existing) {
-        if (existing.dataset.loaded === 'true') return resolve();
+
+        if (existing.dataset.loaded === 'true') {
+          return resolve();
+        }
 
         existing.addEventListener('load', resolve, { once: true });
         existing.addEventListener('error', reject, { once: true });
@@ -52,15 +54,21 @@
 
     if (!target) return;
 
-    // Existing category-page Firebase viewer counter.
+    /*
+      Category pages already have their own Firebase
+      viewer-count listener. Reuse that number.
+    */
 
     const existingCount = document.getElementById('viewerCount');
 
     if (existingCount) {
 
       const update = () => {
+
         const value = existingCount.textContent.trim();
+
         target.textContent = value || '0';
+
       };
 
       update();
@@ -74,7 +82,10 @@
       return;
     }
 
-    // Homepage reads the same Firebase users count.
+    /*
+      Homepage reads the existing users collection.
+      It does not create another viewer record.
+    */
 
     (async () => {
 
@@ -96,17 +107,16 @@
           firebase.initializeApp(FIREBASE_CONFIG);
         }
 
-        firebase.database().ref('users').on('value', snapshot => {
-
-          target.textContent = String(snapshot.numChildren());
-
-        }, error => {
-
-          console.error('Viewer count could not be loaded:', error);
-
-          target.textContent = '—';
-
-        });
+        firebase.database().ref('users').on(
+          'value',
+          snapshot => {
+            target.textContent = String(snapshot.numChildren());
+          },
+          error => {
+            console.error('Viewer count could not be loaded:', error);
+            target.textContent = '—';
+          }
+        );
 
       } catch (error) {
 
@@ -127,7 +137,9 @@
     });
 
     if (!response.ok) {
-      throw new Error('Could not load ui-ux.html (' + response.status + ')');
+      throw new Error(
+        'Could not load ui-ux.html (' + response.status + ')'
+      );
     }
 
     const markup = await response.text();
@@ -150,6 +162,10 @@
     const current =
       location.pathname.split('/').pop() || 'index.html';
 
+    if (current === 'index.html') {
+      document.body.classList.add('home-page');
+    }
+
     mount.querySelectorAll('.hub-links a').forEach(link => {
 
       if (link.dataset.page === current) {
@@ -158,7 +174,9 @@
 
     });
 
-    // Admin Login only on homepage.
+    /*
+      Admin Login appears only on the homepage.
+    */
 
     const adminButton = document.getElementById('hubAdminLogin');
 
@@ -186,12 +204,8 @@
 
     console.error('Multi Stream Hub UI:', error);
 
-    mount.innerHTML = `
-      <div class="shared-ui-error">
-        The shared interface could not load.
-        Please refresh the page.
-      </div>
-    `;
+    mount.innerHTML =
+      '<div class="shared-ui-error">The shared interface could not load. Please refresh the page.</div>';
 
   }
 
