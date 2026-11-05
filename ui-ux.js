@@ -1,175 +1,81 @@
-/* MULTI STREAM HUB - SHARED UI CONTROLLER */
+/* MULTI STREAM HUB - SHARED UI LOADER */
 
-(async function () {
-    const mount = document.getElementById("shared-ui");
-    if (!mount) return;
+(async function loadMultiStreamSharedUI() {
+  const mount = document.getElementById('shared-ui');
+  if (!mount) return;
 
-    const currentPage = location.pathname.split("/").pop() || "index.html";
-    const isHome = currentPage === "index.html";
+  const currentPage = location.pathname.split('/').pop() || 'index.html';
+  const isHome = currentPage === 'index.html';
 
-    try {
-        const response = await fetch("ui-ux.html", { cache: "no-store" });
+  try {
+    const response = await fetch('ui-ux.html', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Could not load ui-ux.html (' + response.status + ')');
 
-        if (!response.ok) {
-            throw new Error("Unable to load ui-ux.html");
-        }
+    const markup = await response.text();
+    const parsed = new DOMParser().parseFromString(markup, 'text/html');
+    const template = parsed.getElementById('multiStreamShell');
+    if (!template) throw new Error('Shared UI template was not found.');
 
-        const html = await response.text();
-        const doc = new DOMParser().parseFromString(html, "text/html");
-        const template = doc.getElementById("multiStreamShell");
+    mount.replaceChildren(template.content.cloneNode(true));
 
-        if (!template) {
-            throw new Error("Shared UI template missing");
-        }
+    const nav = mount.querySelector('.hub-links');
+    const adminActions = mount.querySelector('.hub-nav-actions');
+    const adminButton = mount.querySelector('#hubAdminLogin');
 
-        mount.replaceChildren(template.content.cloneNode(true));
+    document.body.classList.toggle('home-page', isHome);
 
-        const nav = mount.querySelector(".hub-links");
-        const hero = mount.querySelector(".hub-hero");
-        const admin = mount.querySelector(".hub-admin");
-        const homeLink = nav?.querySelector('[data-page="index.html"]');
+    if (isHome) {
+      // Homepage: no duplicate category navigation row and no Home button.
+      nav?.remove();
+      mount.querySelector('.hub-hero')?.remove();
 
-        document.body.classList.toggle("home-page", isHome);
+      // Keep Admin Login at the far top-right of the header.
+      if (adminActions) adminActions.classList.add('home-admin-actions');
+    } else {
+      // Category pages keep their normal navigation and live viewer hero.
+      nav?.querySelectorAll('a').forEach(link => {
+        if (link.dataset.page === currentPage) link.classList.add('active');
+      });
 
-        // Homepage settings
-        if (isHome) {
+      // Admin Login is homepage-only.
+      adminActions?.remove();
+    }
 
-            // Remove Home button
-            homeLink?.remove();
-
-            // Hide duplicate Live Multi-Stream heading
-            hero?.remove();
-
-            // Remove duplicate footer title
-            document.querySelector(".footer-line")?.remove();
-
-            // Keep Admin Login only on homepage
-            if (nav) {
-                nav.classList.add("home-bottom-nav");
-
-                // Arrange buttons in requested order
-                const order = [
-                    "gaming.html",
-                    "news.html",
-                    "sports.html",
-                    "music.html"
-                ];
-
-                order.forEach(page => {
-                    const link = nav.querySelector(`[data-page="${page}"]`);
-                    if (link) nav.appendChild(link);
-                });
-
-                // Move category navigation below the category cards
-                const homeMain = document.querySelector(".home-wrap");
-
-                if (homeMain) {
-                    homeMain.insertAdjacentElement("afterend", nav);
-                }
-            }
-
+    // Preserve the existing Admin Login button behaviour if the page defines it.
+    if (adminButton) {
+      adminButton.addEventListener('click', () => {
+        if (typeof window.openAdminLogin === 'function') {
+          window.openAdminLogin();
         } else {
-
-            // Hide Admin Login on category pages
-            admin?.remove();
-
-            // Active navigation
-            nav?.querySelectorAll("a").forEach(link => {
-                if (link.dataset.page === currentPage) {
-                    link.classList.add("active");
-                }
-            });
+          alert('Admin login is not configured yet.');
         }
-
-        document.documentElement.classList.add("shared-ui-ready");
-
-        // Viewer count on category pages
-        const viewerElement = document.getElementById("viewerCount");
-        const heroCount = document.getElementById("heroOnlineCount");
-
-        if (viewerElement && heroCount) {
-            const updateCount = () => {
-                heroCount.textContent = viewerElement.textContent.trim();
-            };
-
-            updateCount();
-
-            new MutationObserver(updateCount).observe(viewerElement, {
-                childList: true,
-                subtree: true,
-                characterData: true
-            });
-        }
-
-        // Homepage viewer count
-        if (isHome) {
-            loadHomepageViewerCount();
-        }
-
-    } catch (error) {
-        console.error("Multi Stream Hub UI error:", error);
-
-        mount.innerHTML =
-            '<div class="shared-ui-error">Unable to load the shared interface. Please refresh.</div>';
+      });
     }
 
+    document.documentElement.classList.add('shared-ui-ready');
+
+    // Mirror the category page's existing viewer count; do not create another presence.
+    const viewerElement = document.getElementById('viewerCount');
+    const heroCount = document.getElementById('heroOnlineCount');
+
+    if (viewerElement && heroCount) {
+      const updateCount = () => {
+        heroCount.textContent = viewerElement.textContent.trim();
+      };
+
+      updateCount();
+
+      new MutationObserver(updateCount).observe(viewerElement, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+    }
+
+  } catch (error) {
+    console.error('Multi Stream Hub UI:', error);
+
+    mount.innerHTML =
+      '<div class="shared-ui-error">The shared interface could not load. Please refresh the page.</div>';
+  }
 })();
-
-
-/* Homepage viewer count - reads existing Firebase users */
-function loadHomepageViewerCount() {
-
-    const countElement = document.getElementById("heroOnlineCount");
-
-    if (!countElement) return;
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyBTPrDoxWQdEWLLHsUuJbv6cQX1vUd6lQY",
-        authDomain: "multi-stream-ddb1d.firebaseapp.com",
-        databaseURL: "https://multi-stream-ddb1d-default-rtdb.firebaseio.com",
-        projectId: "multi-stream-ddb1d",
-        appId: "1:305282777189:web:50adf19c4bbb1c8005c68c"
-    };
-
-    function startFirebase() {
-
-        if (typeof firebase === "undefined") {
-            countElement.textContent = "—";
-            return;
-        }
-
-        try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-
-            firebase.database().ref("users").on("value", snapshot => {
-                countElement.textContent = snapshot.numChildren();
-            });
-
-        } catch (error) {
-            console.error("Viewer count error:", error);
-            countElement.textContent = "—";
-        }
-    }
-
-    if (typeof firebase !== "undefined") {
-        startFirebase();
-        return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js";
-
-    script.onload = () => {
-        const databaseScript = document.createElement("script");
-
-        databaseScript.src =
-            "https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js";
-
-        databaseScript.onload = startFirebase;
-        document.head.appendChild(databaseScript);
-    };
-
-    document.head.appendChild(script);
-}
