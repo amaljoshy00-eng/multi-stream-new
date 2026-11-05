@@ -116,3 +116,39 @@ body.home-page .category-card:hover{transform:translateY(-4px);border-color:#08c
  body.home-page .category-grid{width:100%!important;grid-template-columns:1fr!important;gap:14px!important}
  body.home-page .category-card{height:175px!important;min-height:175px!important;padding:19px 21px!important}
 }
+/* FIX: KEEP MORE BUTTON SMALL */
+#moreButton,
+button#moreButton {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 110px !important;
+
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+
+    padding: 6px 12px !important;
+    margin: 0 !important;
+
+    font-size: 12px !important;
+    line-height: 1 !important;
+    font-weight: 600 !important;
+
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+
+    transform: none;
+}
+
+@media (max-width: 600px) {
+    #moreButton,
+    button#moreButton {
+        width: auto !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        max-height: 34px !important;
+        padding: 5px 10px !important;
+        font-size: 11px !important;
+    }
+}
