@@ -154,7 +154,7 @@
       line-height:1;
       cursor:pointer;
       pointer-events:auto !important;
-      touch-action:none;
+      touch-action:manipulation;
       -webkit-tap-highlight-color:transparent;
       -webkit-user-select:none;
       user-select:none;
@@ -314,11 +314,9 @@ const db = firebase.database();
 // Controls live in a top-level overlay, OUTSIDE every video card/iframe.
 // This avoids Android Chrome sending taps to the embedded video instead
 // of buttons that visually sit above it.
-const videoOverlayRoot = document.createElement("div");
-videoOverlayRoot.id = "videoOverlayRoot";
-videoOverlayRoot.style.cssText =
-  "position:fixed;inset:0;z-index:2147483647;pointer-events:none;";
-document.body.appendChild(videoOverlayRoot);
+// Per-video controls are attached directly to <body>, just like the More
+// button. This avoids an extra overlay parent that can cause Android Chrome
+// to route taps through to the embedded YouTube/Kick iframe underneath.
 
 const videoOverlayPairs = new Map();
 
@@ -334,6 +332,8 @@ function updateVideoOverlay(card, overlay){
                   rect.width > 0 && rect.height > 0;
   overlay.style.display = visible ? "block" : "none";
   if(!visible) return;
+  // Fixed coordinates come directly from getBoundingClientRect().
+  overlay.style.position = "fixed";
   overlay.style.left = rect.left + "px";
   overlay.style.top = rect.top + "px";
   overlay.style.width = rect.width + "px";
@@ -461,8 +461,8 @@ function createPlayer(streamData,key){
   const videoOverlay = document.createElement("div");
   videoOverlay.className = "video-overlay";
   videoOverlay.style.cssText =
-    "position:absolute;pointer-events:none;overflow:visible;";
-  videoOverlayRoot.appendChild(videoOverlay);
+    "position:fixed;z-index:2147483647;pointer-events:none;overflow:visible;";
+  document.body.appendChild(videoOverlay);
   videoOverlayPairs.set(div, videoOverlay);
 
   let playerDiv = document.createElement("div");
@@ -975,21 +975,20 @@ new Sortable(
     style.id = "multiStreamMoreFix";
 
     style.textContent = `
-      #videoOverlayRoot {
-        position:fixed !important;
-        inset:0 !important;
-        z-index:2147483647 !important;
-        pointer-events:none !important;
-        overflow:visible !important;
-      }
       .video-overlay {
-        position:absolute !important;
+        position:fixed !important;
+        z-index:2147483647 !important;
         pointer-events:none !important;
         overflow:visible !important;
       }
       .video-overlay .card-menu-toggle,
       .video-overlay .controls {
         pointer-events:auto !important;
+      }
+      .video-overlay button,
+      .video-overlay input {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation !important;
       }
       .video-overlay .controls { display:none; }
       .video-overlay.is-controls-open .controls { display:flex !important; }
@@ -1066,7 +1065,7 @@ new Sortable(
       .card { isolation:isolate !important; }
       .card .player { position:relative !important; z-index:1 !important; }
       .card .player iframe { position:relative !important; z-index:1 !important; }
-      .video-overlay .card-menu-toggle { z-index:2147483000 !important; pointer-events:auto !important; touch-action:none !important; }
+      .video-overlay .card-menu-toggle { z-index:2147483000 !important; pointer-events:auto !important; touch-action:manipulation !important; }
       .video-overlay .controls { z-index:2147482999 !important; }
 
       .video-overlay .controls.kick-controls {
@@ -1166,18 +1165,12 @@ new Sortable(
           font-size:11px;
         }
 
-        #videoOverlayRoot {
-        position:fixed !important;
-        inset:0 !important;
-        z-index:2147483647 !important;
-        pointer-events:none !important;
-        overflow:visible !important;
-      }
-      .video-overlay {
-        position:absolute !important;
-        pointer-events:none !important;
-        overflow:visible !important;
-      }
+        .video-overlay {
+          position:fixed !important;
+          z-index:2147483647 !important;
+          pointer-events:none !important;
+          overflow:visible !important;
+        }
       .video-overlay .card-menu-toggle,
       .video-overlay .controls {
         pointer-events:auto !important;
@@ -1238,7 +1231,7 @@ new Sortable(
           right:6px !important;
           z-index:2147483000 !important;
           pointer-events:auto !important;
-          touch-action:none !important;
+          touch-action:manipulation !important;
           -webkit-tap-highlight-color:transparent;
         }
 
@@ -1251,12 +1244,14 @@ new Sortable(
         }
 
         .video-overlay .controls button {
-          min-height:42px !important;
-          min-width:42px !important;
-          padding:9px 11px !important;
+          min-height:46px !important;
+          min-width:46px !important;
+          padding:10px 12px !important;
           font-size:14px !important;
           pointer-events:auto !important;
           touch-action:manipulation !important;
+          -webkit-appearance:none !important;
+          appearance:none !important;
         }
 
         .footer {
