@@ -3,49 +3,73 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Multi Stream Hub</title>
 
 <link rel="stylesheet" href="common.css">
 <link rel="stylesheet" href="ui-ux.css">
-
 </head>
 
 <body>
 
-<!-- CENTRAL SHARED UI -->
 <div id="shared-ui"></div>
 
-<!-- HOMEPAGE CONTENT -->
 <main class="home-wrap">
 
-    <section class="home-intro">
+  <section class="home-intro">
+    <div>
+      <h1>
+        Your streams.<br>
+        <span>All in one place.</span>
+      </h1>
 
-        <div>
-            <h1>
-                Your streams.<br>
-                <span>All in one place.</span>
-            </h1>
-
-            <p>
-                Choose a category from the navigation to watch
-                and manage your live streams.
-            </p>
-        </div>
-
-    </section>
-
-    <div class="home-note">
-        Welcome to Multi Stream Hub. Use the navigation above
-        to open Gaming, Sports, Music or News.
-        Your stream controls, three-dot menus and global More
-        options remain available on their respective pages.
+      <p>Choose a category and watch your favourite live streams together.</p>
     </div>
+  </section>
+
+  <section class="category-grid" aria-label="Stream categories">
+
+    <a class="category-card gaming-card" href="gaming.html">
+      <span class="category-icon">🎮</span>
+      <h2>Gaming</h2>
+      <p>Watch gaming creators and live gameplay.</p>
+      <span class="category-open">Explore Gaming →</span>
+    </a>
+
+    <a class="category-card sports-card" href="sports.html">
+      <span class="category-icon">🏆</span>
+      <h2>Sports</h2>
+      <p>Follow live sports and match coverage.</p>
+      <span class="category-open">Explore Sports →</span>
+    </a>
+
+    <a class="category-card music-card" href="music.html">
+      <span class="category-icon">♫</span>
+      <h2>Music</h2>
+      <p>Enjoy concerts, performances and music streams.</p>
+      <span class="category-open">Explore Music →</span>
+    </a>
+
+    <a class="category-card news-card" href="news.html">
+      <span class="category-icon">▤</span>
+      <h2>News</h2>
+      <p>Keep up with live news and updates.</p>
+      <span class="category-open">Explore News →</span>
+    </a>
+
+  </section>
 
 </main>
 
-<footer class="footer">
-    Multi Stream Hub · Watch Multiple Live Streams Together
+<footer class="footer home-footer">
+
+  <span>Multi Stream Hub · Watch Multiple Live Streams Together</span>
+
+  <span class="developer-credit">
+    Developed by
+    <strong>Amal Joshy</strong>
+    <i aria-hidden="true"></i>
+  </span>
+
 </footer>
 
 <script src="ui-ux.js"></script>
