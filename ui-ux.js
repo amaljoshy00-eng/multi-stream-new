@@ -1,7 +1,6 @@
-/* Multi Stream Hub - central shared UI and live viewer count */
+/* Multi Stream Hub - shared UI */
 
 (async function loadMultiStreamSharedUI() {
-
   const mount = document.getElementById('shared-ui');
   if (!mount) return;
 
@@ -14,61 +13,36 @@
   };
 
   function loadScript(src) {
-
     return new Promise((resolve, reject) => {
-
       const existing = [...document.scripts].find(s => s.src === src);
 
       if (existing) {
-
-        if (existing.dataset.loaded === 'true') {
-          return resolve();
-        }
-
+        if (existing.dataset.loaded === 'true') return resolve();
         existing.addEventListener('load', resolve, { once: true });
         existing.addEventListener('error', reject, { once: true });
-
         return;
       }
 
       const script = document.createElement('script');
-
       script.src = src;
-
       script.onload = () => {
         script.dataset.loaded = 'true';
         resolve();
       };
-
       script.onerror = reject;
-
       document.head.appendChild(script);
-
     });
-
   }
 
   function syncViewerCount() {
-
     const target = document.getElementById('heroOnlineCount');
-
     if (!target) return;
-
-    /*
-      Category pages already have their own Firebase
-      viewer-count listener. Reuse that number.
-    */
 
     const existingCount = document.getElementById('viewerCount');
 
     if (existingCount) {
-
       const update = () => {
-
-        const value = existingCount.textContent.trim();
-
-        target.textContent = value || '0';
-
+        target.textContent = existingCount.textContent.trim() || '0';
       };
 
       update();
@@ -82,15 +56,8 @@
       return;
     }
 
-    /*
-      Homepage reads the existing users collection.
-      It does not create another viewer record.
-    */
-
     (async () => {
-
       try {
-
         await loadScript(
           'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js'
         );
@@ -99,47 +66,33 @@
           'https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js'
         );
 
-        if (!window.firebase) {
-          throw new Error('Firebase SDK unavailable');
-        }
+        if (!window.firebase) throw new Error('Firebase unavailable');
 
         if (!firebase.apps.length) {
           firebase.initializeApp(FIREBASE_CONFIG);
         }
 
-        firebase.database().ref('users').on(
-          'value',
-          snapshot => {
-            target.textContent = String(snapshot.numChildren());
-          },
-          error => {
-            console.error('Viewer count could not be loaded:', error);
-            target.textContent = '—';
-          }
-        );
+        firebase.database().ref('users').on('value', snapshot => {
+          target.textContent = String(snapshot.numChildren());
+        }, error => {
+          console.error('Viewer count error:', error);
+          target.textContent = '—';
+        });
 
       } catch (error) {
-
-        console.error('Homepage viewer count:', error);
-
+        console.error(error);
         target.textContent = '—';
-
       }
-
     })();
-
   }
 
   try {
-
     const response = await fetch('ui-ux.html', {
       cache: 'no-cache'
     });
 
     if (!response.ok) {
-      throw new Error(
-        'Could not load ui-ux.html (' + response.status + ')'
-      );
+      throw new Error('Could not load ui-ux.html');
     }
 
     const markup = await response.text();
@@ -152,32 +105,42 @@
     const template = parsed.getElementById('multiStreamShell');
 
     if (!template) {
-      throw new Error('Shared UI template was not found.');
+      throw new Error('Shared UI template not found');
     }
 
-    mount.replaceChildren(
-      template.content.cloneNode(true)
-    );
+    mount.replaceChildren(template.content.cloneNode(true));
 
     const current =
       location.pathname.split('/').pop() || 'index.html';
 
+    const navLinks = mount.querySelector('.hub-links');
+
     if (current === 'index.html') {
       document.body.classList.add('home-page');
-    }
 
-    mount.querySelectorAll('.hub-links a').forEach(link => {
+      if (navLinks) {
+        // Remove Home navigation button.
+        navLinks.querySelector('[data-page="index.html"]')?.remove();
 
-      if (link.dataset.page === current) {
-        link.classList.add('active');
+        // Move category navigation below homepage content.
+        navLinks.classList.add('home-bottom-nav');
+
+        const homeMain = document.querySelector('.home-wrap');
+
+        if (homeMain) {
+          homeMain.insertAdjacentElement('afterend', navLinks);
+        }
       }
 
-    });
+    } else {
+      mount.querySelectorAll('.hub-links a').forEach(link => {
+        if (link.dataset.page === current) {
+          link.classList.add('active');
+        }
+      });
+    }
 
-    /*
-      Admin Login appears only on the homepage.
-    */
-
+    // Admin Login only on homepage.
     const adminButton = document.getElementById('hubAdminLogin');
 
     if (current !== 'index.html' && adminButton) {
@@ -185,15 +148,9 @@
     }
 
     if (adminButton) {
-
       adminButton.addEventListener('click', () => {
-
-        alert(
-          'Admin authentication will be connected in the admin update.'
-        );
-
+        alert('Admin authentication will be connected in the admin update.');
       });
-
     }
 
     document.documentElement.classList.add('shared-ui-ready');
@@ -201,12 +158,9 @@
     syncViewerCount();
 
   } catch (error) {
-
     console.error('Multi Stream Hub UI:', error);
 
     mount.innerHTML =
-      '<div class="shared-ui-error">The shared interface could not load. Please refresh the page.</div>';
-
+      '<div class="shared-ui-error">The shared interface could not load. Please refresh.</div>';
   }
-
 })();
