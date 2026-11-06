@@ -19,13 +19,11 @@
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
-
       script.src = src;
       script.onload = resolve;
       script.onerror = () => reject(
         new Error('Failed to load Firebase: ' + src)
       );
-
       document.head.appendChild(script);
     });
   }
@@ -38,7 +36,6 @@
   /* UPDATE HEADER */
   function updateHeader() {
     const loginButton = document.getElementById('hubAdminLogin');
-
     if (!loginButton) return;
 
     let logoutButton = document.getElementById('hubAdminLogout');
@@ -47,23 +44,16 @@
       ? '✓ Admin Logged In'
       : '♙ Admin Login';
 
-    // Avoid unnecessary DOM changes.
     if (loginButton.textContent.trim() !== loginText) {
       loginButton.textContent = loginText;
     }
 
     loginButton.classList.toggle('admin-status-active', admin);
+    loginButton.hidden = false;
 
-    if (loginButton.hidden) {
-      loginButton.hidden = false;
-    }
-
-    /* ADMIN LOGOUT BUTTON */
     if (admin) {
-
       if (!logoutButton) {
         logoutButton = document.createElement('button');
-
         logoutButton.id = 'hubAdminLogout';
         logoutButton.type = 'button';
         logoutButton.textContent = '↪ Logout';
@@ -71,30 +61,21 @@
         loginButton.parentNode.appendChild(logoutButton);
 
         logoutButton.addEventListener('click', async function () {
-
           if (!admin) return;
 
-          if (!confirm('Are you sure you want to log out?')) {
-            return;
-          }
+          if (!confirm('Are you sure you want to log out?')) return;
 
           try {
             await firebase.auth().signOut();
           } catch (error) {
             alert('Logout failed: ' + error.message);
           }
-
         });
       }
 
-      if (logoutButton.hidden) {
-        logoutButton.hidden = false;
-      }
-
-    } else if (logoutButton && !logoutButton.hidden) {
-
+      logoutButton.hidden = false;
+    } else if (logoutButton) {
       logoutButton.hidden = true;
-
     }
   }
 
@@ -114,53 +95,38 @@
 
     updateHeader();
 
-    /* ADD STREAM CONTROLS */
     document.querySelectorAll('.top-bar').forEach(bar => {
-
       const input = bar.querySelector('#link');
 
-      if (input) {
-        input.hidden = !value;
-      }
+      if (input) input.hidden = !value;
 
       bar.querySelectorAll('button').forEach(button => {
-
         if (/^add$/i.test(button.textContent.trim())) {
           button.hidden = !value;
         }
-
       });
-
     });
 
-    /* ADMIN-ONLY ELEMENTS */
     document.querySelectorAll(
       '[data-admin-only], .delete-stream, .delete-button'
     ).forEach(element => {
-
       element.hidden = !value;
-
     });
 
-    /* DELETE BUTTONS */
     document.querySelectorAll('.controls button').forEach(button => {
-
       if (/^(x|✕|×|delete|remove)$/i.test(
         button.textContent.trim()
       )) {
         button.hidden = !value;
       }
-
     });
   }
 
   /* ADMIN LOGIN MODAL */
   function addAdminModal() {
-
     if (document.getElementById('hubAdminModal')) return;
 
     const modal = document.createElement('div');
-
     modal.id = 'hubAdminModal';
 
     modal.innerHTML = `
@@ -245,84 +211,102 @@
         );
 
         msg.textContent = 'Signing in…';
-
         submitButton.disabled = true;
 
         try {
-
           const result = await firebase.auth()
             .signInWithEmailAndPassword(email, password);
 
           if (!isAdmin(result.user)) {
-
             await firebase.auth().signOut();
 
             throw new Error(
               'This account is not authorized as the site administrator.'
             );
-
           }
 
           modal.remove();
-
           setAdminUI(true);
 
           alert('Admin login successful.');
 
         } catch (error) {
 
-          msg.textContent = error.message || 'Login failed.';
+          const code = error && error.code ? error.code : '';
+
+          if (
+            code === 'auth/user-not-found' ||
+            code === 'auth/invalid-email'
+          ) {
+            msg.textContent =
+              'Wrong username. Please check your email address.';
+
+          } else if (code === 'auth/wrong-password') {
+            msg.textContent =
+              'Wrong password. Please try again.';
+
+          } else if (
+            code === 'auth/invalid-credential' ||
+            code === 'auth/invalid-login-credentials'
+          ) {
+            msg.textContent =
+              'Wrong username or password.';
+
+          } else if (code === 'auth/too-many-requests') {
+            msg.textContent =
+              'Too many attempts. Please try again later.';
+
+          } else if (code === 'auth/network-request-failed') {
+            msg.textContent =
+              'Network error. Check your internet connection.';
+
+          } else if (!code && error.message) {
+            msg.textContent = error.message;
+
+          } else {
+            msg.textContent =
+              'Login failed. Please try again.';
+          }
+
+          console.error(
+            'Admin login failed:',
+            code || (error && error.message)
+          );
 
         } finally {
-
           if (submitButton.isConnected) {
             submitButton.disabled = false;
           }
-
         }
-
       });
-
   }
 
   /* OPEN LOGIN */
   window.openAdminLogin = function () {
-
     if (admin) return;
-
     addAdminModal();
-
   };
 
   /* PROTECT STREAM ACTIONS */
   function protectActions() {
 
-    /* PROTECT ADD STREAM FUNCTION */
     if (
       typeof window.addStream === 'function' &&
       !window.addStream.__adminGuarded
     ) {
-
       const original = window.addStream;
 
       const guarded = function () {
-
         if (!admin) {
-
           alert('Only the administrator can add streams.');
-
           return;
-
         }
 
         return original.apply(this, arguments);
-
       };
 
       guarded.__adminGuarded = true;
-
       window.addStream = guarded;
-
     }
 
     /* PROTECT DELETE BUTTONS */
@@ -331,14 +315,11 @@
       document.addEventListener('click', function (event) {
 
         const target = event.target;
-
         if (!(target instanceof Element)) return;
 
         const button = target.closest('button');
-
         if (!button) return;
 
-        // Ignore authentication controls.
         if (
           button.closest('#hubAdminModal') ||
           button.id === 'hubAdminLogin' ||
@@ -356,40 +337,31 @@
           button.classList.contains('delete-button');
 
         if (looksLikeDelete && !admin) {
-
           event.preventDefault();
           event.stopPropagation();
           event.stopImmediatePropagation();
 
           alert('Only the administrator can remove streams.');
-
         }
 
       }, true);
 
       document.__hubDeleteGuard = true;
-
     }
 
     setAdminUI(admin);
-
   }
 
   /* SAFER MUTATION OBSERVER */
   function scheduleProtection() {
-
     if (observerScheduled) return;
 
     observerScheduled = true;
 
     requestAnimationFrame(() => {
-
       observerScheduled = false;
-
       protectActions();
-
     });
-
   }
 
   /* INITIALIZE FIREBASE */
@@ -397,59 +369,37 @@
 
     try {
 
-      /* FIREBASE APP SDK */
       if (!window.firebase || !firebase.apps) {
-
         await loadScript(
           'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js'
         );
-
       }
 
-      /* FIREBASE AUTH SDK */
       if (!firebase.auth) {
-
         await loadScript(
           'https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js'
         );
-
       }
 
-      /* INITIALIZE APP ONLY ONCE */
       if (!firebase.apps.length) {
-
         firebase.initializeApp(CONFIG);
-
       }
 
       const auth = firebase.auth();
 
-      /* KEEP ADMIN LOGIN PERSISTENT */
       await auth.setPersistence(
         firebase.auth.Auth.Persistence.LOCAL
       );
 
-      /* AUTHENTICATION STATE */
       auth.onAuthStateChanged(user => {
-
         setAdminUI(isAdmin(user));
-
         protectActions();
-
       });
 
-      /* INITIAL PROTECTION */
       protectActions();
 
-      /*
-        Watch dynamically added stream elements.
-        Only child-list changes are observed.
-        Updates are coalesced into one animation frame.
-      */
       const observer = new MutationObserver(() => {
-
         scheduleProtection();
-
       });
 
       observer.observe(document.body, {
@@ -465,22 +415,16 @@
       );
 
       setAdminUI(false);
-
     }
-
   }
 
   /* START AFTER PAGE LOAD */
   if (document.readyState === 'loading') {
-
     document.addEventListener('DOMContentLoaded', start, {
       once: true
     });
-
   } else {
-
     start();
-
   }
 
 })();
