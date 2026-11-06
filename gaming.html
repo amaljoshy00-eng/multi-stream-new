@@ -956,6 +956,11 @@
       moreRoot.appendChild(moreButton);
       moreRoot.appendChild(morePanel);
 
+      // Explicitly set the closed state before the page becomes interactive.
+      moreRoot.classList.remove("is-open");
+      morePanel.hidden = true;
+      moreButton.setAttribute("aria-expanded", "false");
+
       function placeHeaderControls() {
         const navActions = document.querySelector(".hub-nav-actions");
         if (!navActions) return false;
@@ -1041,7 +1046,7 @@
           }
 
           #morePanel {
-            display:none;
+            display:none !important;
             position:fixed !important;
             top:58px !important;
             right:12px !important;
@@ -1056,7 +1061,12 @@
             box-shadow:0 10px 30px rgba(0,0,0,.55);
           }
 
-          body.more-open #morePanel {
+          #msMoreRoot:not(.is-open) #morePanel,
+          #morePanel[hidden] {
+            display:none !important;
+          }
+
+          #msMoreRoot.is-open #morePanel:not([hidden]) {
             display:block !important;
           }
 
@@ -1451,45 +1461,45 @@
       });
 
       // =====================================
-      // MORE MENU — FIXED OPEN/CLOSE BEHAVIOUR
+      // MORE MENU — EXPLICIT OPEN/CLOSE STATE
       // =====================================
 
       function closeMore() {
-        document.body.classList.remove("more-open");
+        moreRoot.classList.remove("is-open");
+        morePanel.hidden = true;
         moreButton.setAttribute("aria-expanded", "false");
       }
 
-      // Always start with the menu closed
+      function openMore() {
+        moreRoot.classList.add("is-open");
+        morePanel.hidden = false;
+        moreButton.setAttribute("aria-expanded", "true");
+      }
+
+      // Force the menu to start closed
       closeMore();
 
-      // More button: toggle open and closed
       moreButton.addEventListener("click", function(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        const isOpen = document.body.classList.contains("more-open");
-
-        if (isOpen) {
+        if (moreRoot.classList.contains("is-open")) {
           closeMore();
         } else {
-          document.body.classList.add("more-open");
-          moreButton.setAttribute("aria-expanded", "true");
+          openMore();
         }
       });
 
-      // Keep clicks inside the panel from triggering outside-click handling
       morePanel.addEventListener("click", function(event) {
         event.stopPropagation();
       });
 
-      // Close when clicking outside the More menu
       document.addEventListener("click", function(event) {
         if (!moreRoot.contains(event.target)) {
           closeMore();
         }
       });
 
-      // Close using Escape key
       document.addEventListener("keydown", function(event) {
         if (event.key === "Escape") {
           closeMore();
