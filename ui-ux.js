@@ -1,5 +1,4 @@
 /* Multi Stream Hub - shared UI loader and live viewer count */
-
 (async function loadMultiStreamSharedUI() {
   const mount = document.getElementById('shared-ui');
   if (!mount) return;
@@ -18,6 +17,7 @@
 
       if (existing) {
         if (existing.dataset.loaded === 'true') return resolve();
+
         existing.addEventListener('load', resolve, { once: true });
         existing.addEventListener('error', reject, { once: true });
         return;
@@ -25,10 +25,12 @@
 
       const script = document.createElement('script');
       script.src = src;
+
       script.onload = () => {
         script.dataset.loaded = 'true';
         resolve();
       };
+
       script.onerror = reject;
       document.head.appendChild(script);
     });
@@ -61,7 +63,6 @@
         if (liveTarget) {
           liveTarget.textContent = String(snapshot.numChildren());
         }
-
       }, error => {
         console.error('Homepage viewer count:', error);
         target.textContent = '—';
@@ -85,12 +86,7 @@
     }
 
     const markup = await response.text();
-
-    const parsed = new DOMParser().parseFromString(
-      markup,
-      'text/html'
-    );
-
+    const parsed = new DOMParser().parseFromString(markup, 'text/html');
     const template = parsed.getElementById('multiStreamShell');
 
     if (!template) {
@@ -110,12 +106,13 @@
     const nav = mount.querySelector('.hub-links');
     const hero = mount.querySelector('.hub-hero');
     const adminActions = mount.querySelector('.hub-nav-actions');
+    const adminButton = mount.querySelector('#hubAdminLogin');
 
     if (isHome) {
       nav?.remove();
       hero?.remove();
 
-      // Live viewer counter beside Admin Login.
+      // Homepage viewer counter stays beside Admin Login.
       const pill = document.createElement('div');
 
       pill.className = 'home-live-viewers';
@@ -136,17 +133,22 @@
       startHomepageViewerCount();
 
     } else {
+      // Highlight the current category.
       nav?.querySelectorAll('a').forEach(link => {
         if (link.dataset.page === current) {
           link.classList.add('active');
         }
       });
 
-      adminActions?.remove();
+      /*
+       * IMPORTANT:
+       * Remove only Admin Login on category pages.
+       * Keep .hub-nav-actions because More and DATA are placed inside it.
+       */
+      adminButton?.remove();
     }
 
-    const adminButton = mount.querySelector('#hubAdminLogin');
-
+    // Connect the Admin Login button to the existing authentication script.
     if (adminButton) {
       adminButton.addEventListener('click', () => {
         if (typeof window.openAdminLogin === 'function') {
@@ -159,8 +161,7 @@
 
     document.documentElement.classList.add('shared-ui-ready');
 
-    // Category pages: mirror their existing viewer count.
-    // Do not create additional presence records.
+    // Keep the shared hero viewer count synchronized on category pages.
     const existingCount = document.getElementById('viewerCount');
     const heroCount = document.getElementById('heroOnlineCount');
 
