@@ -5,7 +5,7 @@
   const ADMIN_UID = 's3fgFVeKwyUDsKYjIJu8NPdGO7f2';
 
   const CONFIG = {
-    apiKey: 'AIzaSyBTPrDoxWQdEWLLHsUuJbv6cQX1vUd6lQY',
+   apiKey: 'AIzaSyBF8DDDrpXWG6OMu1dvmPHvuWl_UApEE-0',
     authDomain: 'multi-stream-ddb1d.firebaseapp.com',
     databaseURL: 'https://multi-stream-ddb1d-default-rtdb.firebaseio.com',
     projectId: 'multi-stream-ddb1d',
