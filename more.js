@@ -45,7 +45,19 @@
       oldButton?.remove();
       oldPanel?.remove();
 
-      document.body.appendChild(root);
+     const navActions = document.querySelector('.hub-nav-actions');
+
+if (navActions) {
+  navActions.appendChild(root);
+
+  const dataMonitor = document.getElementById('viewerDataMonitor');
+
+  if (dataMonitor) {
+    navActions.insertBefore(dataMonitor, root);
+  }
+} else {
+  document.body.appendChild(root);
+}
 
       const controlsSlot = root.querySelector('#moreControlsSlot');
       const gridSlot = root.querySelector('#moreGridSlot');
