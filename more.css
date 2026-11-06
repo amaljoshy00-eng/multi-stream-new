@@ -1,0 +1,184 @@
+/* Multi Stream Hub - shared More menu */
+
+.ms-more-root {
+  position: relative;
+  z-index: 1000000;
+}
+
+.ms-more-trigger {
+  position: fixed !important;
+  top: 12px !important;
+  right: 12px !important;
+  z-index: 1000002 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 9px 15px !important;
+  border: 1px solid rgba(100,190,255,.35) !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg,#17243a,#101827) !important;
+  color: #f4f8ff !important;
+  font: 600 14px/1.1 system-ui,sans-serif !important;
+  letter-spacing: .2px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.28);
+  cursor: pointer;
+}
+
+.ms-more-trigger:hover {
+  border-color: rgba(100,190,255,.75) !important;
+  transform: translateY(-1px);
+}
+
+.ms-more-panel {
+  position: fixed !important;
+  top: 64px !important;
+  right: 12px !important;
+  left: auto !important;
+  z-index: 1000001 !important;
+  width: min(390px,calc(100vw - 24px)) !important;
+  max-height: min(76vh,620px) !important;
+  overflow: auto !important;
+  box-sizing: border-box;
+  padding: 16px !important;
+  border: 1px solid rgba(120,170,220,.22) !important;
+  border-radius: 18px !important;
+  background: rgba(13,20,33,.97) !important;
+  color: #edf4ff !important;
+  box-shadow: 0 18px 55px rgba(0,0,0,.48) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.ms-more-panel[hidden] {
+  display: none !important;
+}
+
+.ms-more-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.ms-more-heading strong {
+  display: block;
+  font-size: 15px;
+}
+
+.ms-more-heading small {
+  display: block;
+  margin-top: 3px;
+  color: #9eacc0;
+  font-size: 11px;
+}
+
+.ms-more-close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 9px;
+  color: #dce8f8;
+  background: #263449;
+  cursor: pointer;
+}
+
+.ms-more-section-title {
+  margin: 0 0 9px;
+  color: #9fb4cf;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+}
+
+.ms-more-controls-slot,
+.ms-more-grid-slot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+#morePanel .top-controls,
+#morePanel .menu-panel {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+#morePanel .top-controls button,
+#morePanel .menu-panel button {
+  min-height: 38px;
+  padding: 8px 11px !important;
+  border: 1px solid rgba(150,180,220,.2) !important;
+  border-radius: 10px !important;
+  background: #202d42 !important;
+  color: #f2f6ff !important;
+  font-size: 12px !important;
+  cursor: pointer;
+}
+
+#morePanel .top-controls button:hover,
+#morePanel .menu-panel button:hover {
+  background: #2b405d !important;
+}
+
+#morePanel .menu-panel > div {
+  position: relative;
+}
+
+#morePanel .dropdown-menu {
+  display: none;
+  position: relative !important;
+  inset: auto !important;
+  width: 100%;
+  min-width: 0 !important;
+  margin-top: 7px;
+  padding: 7px;
+  border: 1px solid rgba(150,180,220,.18);
+  border-radius: 11px;
+  background: #111c2c;
+  box-shadow: none;
+}
+
+#morePanel .dropdown-menu.show,
+#morePanel .dropdown-menu.active,
+#morePanel .dropdown-menu[style*="display: block"] {
+  display: grid !important;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 6px;
+}
+
+.ms-more-divider {
+  height: 1px;
+  margin: 15px 0;
+  background: rgba(150,180,220,.15);
+}
+
+@media(max-width:700px) {
+  .ms-more-trigger {
+    top: 7px !important;
+    right: 7px !important;
+    min-height: 38px;
+    padding: 7px 11px !important;
+  }
+
+  .ms-more-panel {
+    top: 51px !important;
+    right: 7px !important;
+    left: 7px !important;
+    width: auto !important;
+    max-height: 72vh !important;
+  }
+}
