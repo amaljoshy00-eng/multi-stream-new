@@ -1,4 +1,4 @@
-<!-- CENTRAL UI TEMPLATE: shared navigation and live viewer pill -->
+<!-- CENTRAL UI TEMPLATE: ui-ux.js loads this template into every page. -->
 <template id="multiStreamShell">
   <header class="hub-nav">
     <a class="hub-brand" href="index.html" aria-label="Multi Stream Hub Home">
@@ -17,10 +17,22 @@
       <a data-page="news.html" href="news.html">▤ <span>News</span></a>
     </nav>
 
+    <!-- More and DATA are placed inside this same container by gaming.html. -->
     <div class="hub-nav-actions">
-      <button class="hub-admin" id="hubAdminLogin" type="button">
-        ♙ <span>Admin Login</span>
-      </button>
+      <button
+        class="hub-search"
+        type="button"
+        aria-label="Search"
+        title="Search streams"
+        onclick="document.getElementById('link')?.focus()"
+      >⌕</button>
+
+      <button
+        class="hub-admin"
+        id="hubAdminLogin"
+        type="button"
+        title="Admin Login"
+      >♙ <span>Admin Login</span></button>
     </div>
   </header>
 
@@ -30,9 +42,9 @@
       <p>Watch and control multiple live streams in one place</p>
     </div>
 
-    <div class="hub-status" aria-live="polite">
+    <div class="hub-status">
       <i class="status-dot"></i>
-      <span>LIVE VIEWER</span>
+      LIVE VIEWER
       <b id="heroOnlineCount">—</b>
     </div>
   </section>
