@@ -1,24 +1,26 @@
-/* Multi Stream Hub admin access — Firebase v8 */
+/* MULTI STREAM HUB — ADMIN AUTHENTICATION */
 (function () {
   'use strict';
 
   const ADMIN_UID = 's3fgFVeKwyUDsKYjIJu8NPdGO7f2';
 
   const CONFIG = {
-   apiKey: 'AIzaSyBF8DDDrpXWG6OMu1dvmPHvuWl_UApEE-0',
+    apiKey: 'AIzaSyBF8DDDrpXWG6OMu1dvmPHvuWl_UApEE-0',
     authDomain: 'multi-stream-ddb1d.firebaseapp.com',
     databaseURL: 'https://multi-stream-ddb1d-default-rtdb.firebaseio.com',
     projectId: 'multi-stream-ddb1d',
     appId: '1:305282777189:web:50adf19c4bbb1c8005c68c'
   };
 
+  let admin = false;
+
   function loadScript(src) {
     return new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = src;
-      s.onload = resolve;
-      s.onerror = reject;
-      document.head.appendChild(s);
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
     });
   }
 
@@ -26,7 +28,48 @@
     return !!user && user.uid === ADMIN_UID;
   }
 
-  let admin = false;
+  function updateHeader() {
+    const loginButton = document.getElementById('hubAdminLogin');
+
+    if (!loginButton) return;
+
+    let logoutButton = document.getElementById('hubAdminLogout');
+
+    loginButton.textContent = admin
+      ? '✓ Admin Logged In'
+      : '♙ Admin Login';
+
+    loginButton.classList.toggle('admin-status-active', admin);
+    loginButton.hidden = false;
+
+    if (admin) {
+      if (!logoutButton) {
+        logoutButton = document.createElement('button');
+        logoutButton.id = 'hubAdminLogout';
+        logoutButton.type = 'button';
+        logoutButton.textContent = '↪ Logout';
+
+        loginButton.parentNode.appendChild(logoutButton);
+
+        logoutButton.addEventListener('click', async function () {
+          if (!admin) return;
+
+          if (!confirm('Are you sure you want to log out?')) return;
+
+          try {
+            await firebase.auth().signOut();
+          } catch (error) {
+            alert('Logout failed: ' + error.message);
+          }
+        });
+      }
+
+      logoutButton.hidden = false;
+
+    } else if (logoutButton) {
+      logoutButton.hidden = true;
+    }
+  }
 
   function setAdminUI(value) {
     admin = value;
@@ -38,6 +81,8 @@
     document.documentElement.classList.toggle(
       'admin-guest', !value
     );
+
+    updateHeader();
 
     document.querySelectorAll('.top-bar').forEach(bar => {
       const input = bar.querySelector('#link');
@@ -58,7 +103,7 @@
     });
 
     document.querySelectorAll('.controls button').forEach(button => {
-      if (/^(x|delete|remove)$/i.test(button.textContent.trim())) {
+      if (/^(x|✕|×|delete|remove)$/i.test(button.textContent.trim())) {
         button.hidden = !value;
       }
     });
@@ -118,33 +163,27 @@
 
     document.body.appendChild(modal);
 
-    modal.querySelector('.hub-auth-close').onclick =
-      () => modal.remove();
+    modal.querySelector('.hub-auth-close').onclick = () => {
+      modal.remove();
+    };
 
-    modal.querySelector('.hub-auth-backdrop').onclick =
-      () => modal.remove();
+    modal.querySelector('.hub-auth-backdrop').onclick = () => {
+      modal.remove();
+    };
 
     modal.querySelector('#hubAdminForm')
-      .addEventListener('submit', async e => {
-
-        e.preventDefault();
+      .addEventListener('submit', async function (event) {
+        event.preventDefault();
 
         const msg = modal.querySelector('#hubAuthMessage');
-
-        const email =
-          modal.querySelector('#hubAdminEmail').value.trim();
-
-        const password =
-          modal.querySelector('#hubAdminPassword').value;
+        const email = modal.querySelector('#hubAdminEmail').value.trim();
+        const password = modal.querySelector('#hubAdminPassword').value;
 
         msg.textContent = 'Signing in…';
 
         try {
-          const result =
-            await firebase.auth().signInWithEmailAndPassword(
-              email,
-              password
-            );
+          const result = await firebase.auth()
+            .signInWithEmailAndPassword(email, password);
 
           if (!isAdmin(result.user)) {
             await firebase.auth().signOut();
@@ -158,28 +197,16 @@
 
           setAdminUI(true);
 
-          alert(
-            'Admin login successful. Stream management is now enabled.'
-          );
+          alert('Admin login successful.');
 
-        } catch (err) {
-          msg.textContent =
-            err.message || 'Login failed. Please try again.';
+        } catch (error) {
+          msg.textContent = error.message || 'Login failed.';
         }
       });
   }
 
   window.openAdminLogin = function () {
-    if (admin) {
-      if (confirm(
-        'You are signed in as administrator. Sign out?'
-      )) {
-        firebase.auth().signOut();
-      }
-
-      return;
-    }
-
+    if (admin) return;
     addAdminModal();
   };
 
@@ -201,7 +228,6 @@
       };
 
       guarded.__adminGuarded = true;
-
       window.addStream = guarded;
     }
 
@@ -213,6 +239,15 @@
 
         if (!button) return;
 
+        // Never treat login modal buttons as stream-delete buttons.
+        if (
+          button.closest('#hubAdminModal') ||
+          button.id === 'hubAdminLogin' ||
+          button.id === 'hubAdminLogout'
+        ) {
+          return;
+        }
+
         const label = button.textContent.trim();
 
         const looksLikeDelete =
@@ -222,7 +257,6 @@
           button.classList.contains('delete-button');
 
         if (looksLikeDelete && !admin) {
-
           event.preventDefault();
           event.stopPropagation();
           event.stopImmediatePropagation();
@@ -270,18 +304,16 @@
 
       protectActions();
 
-      new MutationObserver(protectActions).observe(
-        document.body,
-        {
-          childList: true,
-          subtree: true
-        }
-      );
+      new MutationObserver(() => {
+        protectActions();
+      }).observe(document.body, {
+        childList: true,
+        subtree: true
+      });
 
     } catch (error) {
-
       console.error(
-        'Admin authentication could not initialize:',
+        'Admin authentication initialization failed:',
         error
       );
 
