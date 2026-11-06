@@ -1,39 +1,49 @@
-/* Multi Stream Hub — Viewer Ordering + Estimated Data Monitor
-   Viewer ordering is stored locally. No Firebase data is modified.
-*/
+/* ==========================================================
+   MULTI STREAM HUB
+   Viewer-controlled stream ordering + data usage estimate
+   Local browser changes only. No Firebase writes.
+   ========================================================== */
 
 (() => {
   'use strict';
 
   const GRID_ID = 'grid';
   const STORAGE_PREFIX = 'multiStreamViewerOrder:v1:';
-  const ESTIMATED_MBPS_PER_STREAM = 2;
 
+  // Estimate only: 2 Mbps per loaded stream.
+  const ESTIMATED_MBPS_PER_STREAM = 2;
   const MB_PER_HOUR_PER_STREAM =
     ESTIMATED_MBPS_PER_STREAM * 3600 / 8;
 
   const pageKey = (() => {
-    const p = location.pathname.toLowerCase();
+    const path = location.pathname.toLowerCase();
 
-    if (p.includes('gaming')) return 'gaming';
-    if (p.includes('sports')) return 'sports';
-    if (p.includes('music')) return 'music';
-    if (p.includes('news')) return 'news';
+    if (path.includes('gaming')) return 'gaming';
+    if (path.includes('sports')) return 'sports';
+    if (path.includes('music')) return 'music';
+    if (path.includes('news')) return 'news';
 
-    return p.split('/').pop() || 'streams';
+    return path.split('/').pop() || 'streams';
   })();
 
   const storageKey = STORAGE_PREFIX + pageKey;
 
-  let grid;
-  let monitor;
+  let grid = null;
+  let monitor = null;
   let startedAt = Date.now();
+
   let dragged = null;
   let dragPointerId = null;
+
   let suppressObserver = false;
   let refreshQueued = false;
+  let initialized = false;
 
   let savedOrder = readOrder();
+
+  /* ==========================================================
+     VIEWER ORDER STORAGE
+     ========================================================== */
 
   function readOrder() {
     try {
@@ -58,8 +68,8 @@
   function cards() {
     if (!grid) return [];
 
-    return Array.from(grid.children).filter(
-      element => element.classList.contains('card')
+    return Array.from(grid.children).filter(card =>
+      card.classList.contains('card')
     );
   }
 
@@ -111,7 +121,9 @@
       ordered.every(
         (card, index) => current[index] === card
       )
-    ) return;
+    ) {
+      return;
+    }
 
     suppressObserver = true;
 
@@ -124,20 +136,27 @@
     });
   }
 
+  /* ==========================================================
+     DRAG HANDLE
+     ========================================================== */
+
   function makeHandle(card) {
     if (
       card.querySelector(
         ':scope > .viewer-drag-handle'
       )
-    ) return;
+    ) {
+      return;
+    }
 
     const handle = document.createElement('button');
 
     handle.type = 'button';
     handle.className = 'viewer-drag-handle';
     handle.textContent = '⠿';
+
     handle.title =
-      'Drag to rearrange streams (only on this device)';
+      'Drag to rearrange this stream';
 
     handle.setAttribute(
       'aria-label',
@@ -159,12 +178,12 @@
     for (const card of candidates) {
       const rect = card.getBoundingClientRect();
 
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
 
       const distance = Math.hypot(
-        (x - cx) / Math.max(1, rect.width),
-        (y - cy) / Math.max(1, rect.height)
+        (x - centerX) / Math.max(1, rect.width),
+        (y - centerY) / Math.max(1, rect.height)
       );
 
       if (distance < bestDistance) {
@@ -172,10 +191,10 @@
         best = card;
 
         before =
-          y < cy ||
+          y < centerY ||
           (
-            Math.abs(y - cy) < rect.height * 0.25 &&
-            x < cx
+            Math.abs(y - centerY) < rect.height * 0.25 &&
+            x < centerX
           );
       }
     }
@@ -199,7 +218,9 @@
     dragged = card;
     dragPointerId = event.pointerId;
 
-    handle.setPointerCapture?.(event.pointerId);
+    try {
+      handle.setPointerCapture(event.pointerId);
+    } catch (_) {}
 
     card.classList.add('viewer-dragging');
 
@@ -212,7 +233,9 @@
     if (
       !dragged ||
       event.pointerId !== dragPointerId
-    ) return;
+    ) {
+      return;
+    }
 
     event.preventDefault();
 
@@ -245,7 +268,9 @@
     if (
       event &&
       event.pointerId !== dragPointerId
-    ) return;
+    ) {
+      return;
+    }
 
     dragged.classList.remove(
       'viewer-dragging'
@@ -262,6 +287,10 @@
     refreshMonitor();
   }
 
+  /* ==========================================================
+     DATA USAGE MONITOR
+     ========================================================== */
+
   function formatBytes(mb) {
     if (mb >= 1024) {
       return (mb / 1024).toFixed(2) + ' GB';
@@ -275,7 +304,12 @@
       document.getElementById(
         'viewerDataMonitor'
       )
-    ) return;
+    ) {
+      monitor = document.getElementById(
+        'viewerDataMonitor'
+      );
+      return;
+    }
 
     monitor = document.createElement('section');
 
@@ -283,22 +317,28 @@
 
     monitor.innerHTML = `
       <button
-        class="vdm-toggle"
+        class="vdm-summary"
         type="button"
-        aria-expanded="true"
-        title="Collapse data monitor"
-      >▾</button>
+        aria-expanded="false"
+        title="Show data usage details"
+      >
+        <span class="vdm-label">DATA</span>
+
+        <strong id="vdmTotal">0 MB</strong>
+
+        <span class="vdm-arrow">▾</span>
+      </button>
 
       <div class="vdm-content">
 
         <div class="vdm-heading">
-          DATA USAGE <span>EST.</span>
+          DATA USAGE ESTIMATE
         </div>
 
-        <div
-          class="vdm-total"
-          id="vdmTotal"
-        >0 MB</div>
+        <div class="vdm-row">
+          <span>Consumed</span>
+          <strong id="vdmDetailTotal">0 MB</strong>
+        </div>
 
         <div class="vdm-row">
           <span>Hourly estimate</span>
@@ -311,14 +351,16 @@
         </div>
 
         <div class="vdm-note">
-          Approx. 2 Mbps per stream.
-          Actual usage varies by quality and platform.
+          Estimated only. Actual usage varies with
+          video quality and streaming platform.
         </div>
 
         <button
           class="vdm-reset"
           type="button"
-        >Reset estimate</button>
+        >
+          Reset estimate
+        </button>
 
       </div>
     `;
@@ -326,30 +368,32 @@
     document.body.appendChild(monitor);
 
     monitor
-      .querySelector('.vdm-toggle')
+      .querySelector('.vdm-summary')
       .addEventListener('click', () => {
 
-        const collapsed =
+        const expanded =
           monitor.classList.toggle(
-            'vdm-collapsed'
+            'vdm-expanded'
+          );
+
+        monitor
+          .querySelector('.vdm-summary')
+          .setAttribute(
+            'aria-expanded',
+            String(expanded)
           );
 
         monitor.querySelector(
-          '.vdm-toggle'
-        ).textContent = collapsed ? '▴' : '▾';
-
-        monitor.querySelector(
-          '.vdm-toggle'
-        ).setAttribute(
-          'aria-expanded',
-          String(!collapsed)
-        );
+          '.vdm-arrow'
+        ).textContent = expanded ? '▴' : '▾';
       });
 
     monitor
       .querySelector('.vdm-reset')
       .addEventListener('click', () => {
+
         startedAt = Date.now();
+
         refreshMonitor();
       });
 
@@ -372,26 +416,50 @@
     const consumedMB =
       hourlyMB * elapsedHours;
 
-    monitor.querySelector(
-      '#vdmTotal'
-    ).textContent = formatBytes(consumedMB);
+    const total = formatBytes(consumedMB);
 
-    monitor.querySelector(
-      '#vdmHourly'
-    ).textContent =
-      formatBytes(hourlyMB) + '/h';
+    const totalElement =
+      monitor.querySelector('#vdmTotal');
 
-    monitor.querySelector(
-      '#vdmCount'
-    ).textContent = String(count);
+    const detailElement =
+      monitor.querySelector('#vdmDetailTotal');
+
+    const hourlyElement =
+      monitor.querySelector('#vdmHourly');
+
+    const countElement =
+      monitor.querySelector('#vdmCount');
+
+    if (totalElement) {
+      totalElement.textContent = total;
+    }
+
+    if (detailElement) {
+      detailElement.textContent = total;
+    }
+
+    if (hourlyElement) {
+      hourlyElement.textContent =
+        formatBytes(hourlyMB) + '/h';
+    }
+
+    if (countElement) {
+      countElement.textContent = String(count);
+    }
   }
+
+  /* ==========================================================
+     STYLES
+     ========================================================== */
 
   function installStyles() {
     if (
       document.getElementById(
         'viewerFeaturesStyles'
       )
-    ) return;
+    ) {
+      return;
+    }
 
     const style = document.createElement('style');
 
@@ -436,108 +504,136 @@
         user-select: none !important;
       }
 
+      /* DATA MONITOR - TOP BESIDE MORE */
+
       #viewerDataMonitor {
-        position: fixed;
-        z-index: 2147483000;
-        right: 12px;
-        bottom: 12px;
-        width: 214px;
+        position: fixed !important;
+        top: 12px !important;
+        right: 105px !important;
+        z-index: 2147483001 !important;
+        width: 145px;
         color: #f8fafc;
-        background: rgba(13,18,30,.94);
-        border: 1px solid rgba(148,163,184,.35);
-        border-radius: 13px;
-        box-shadow: 0 8px 28px #0008;
+        background: rgba(13,18,30,.97);
+        border: 1px solid rgba(96,165,250,.45);
+        border-radius: 9px;
+        box-shadow: 0 4px 16px #0007;
         font: 12px/1.4 Arial,sans-serif;
-        backdrop-filter: blur(12px);
+        backdrop-filter: blur(10px);
       }
 
-      #viewerDataMonitor .vdm-toggle {
-        position: absolute;
-        top: 6px;
-        right: 7px;
+      #viewerDataMonitor .vdm-summary {
+        width: 100%;
+        min-height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        padding: 7px 9px;
         border: 0;
+        border-radius: 8px;
         background: transparent;
-        color: #fff;
-        font-size: 17px;
+        color: white;
         cursor: pointer;
-        padding: 2px 7px;
+      }
+
+      #viewerDataMonitor .vdm-label {
+        color: #7dd3fc;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .5px;
+      }
+
+      #viewerDataMonitor .vdm-summary strong {
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      #viewerDataMonitor .vdm-arrow {
+        color: #94a3b8;
+        font-size: 12px;
       }
 
       #viewerDataMonitor .vdm-content {
-        padding: 12px 13px 11px;
+        display: none;
+        padding: 10px;
+        border-top: 1px solid #334155;
+      }
+
+      #viewerDataMonitor.vdm-expanded .vdm-content {
+        display: block;
       }
 
       #viewerDataMonitor .vdm-heading {
-        color: #aab8cc;
+        color: #7dd3fc;
         font-size: 10px;
         font-weight: 700;
-        letter-spacing: 1.2px;
-      }
-
-      #viewerDataMonitor .vdm-heading span {
-        color: #7dd3fc;
-        margin-left: 5px;
-      }
-
-      #viewerDataMonitor .vdm-total {
-        font-size: 24px;
-        font-weight: 700;
-        margin: 3px 0 7px;
+        margin-bottom: 8px;
       }
 
       #viewerDataMonitor .vdm-row {
         display: flex;
         justify-content: space-between;
         gap: 8px;
+        margin: 7px 0;
         color: #cbd5e1;
-        margin: 4px 0;
+        font-size: 11px;
       }
 
       #viewerDataMonitor .vdm-row strong {
-        color: #fff;
+        color: white;
+        white-space: nowrap;
       }
 
       #viewerDataMonitor .vdm-note {
         color: #94a3b8;
         font-size: 10px;
-        margin: 8px 0;
+        line-height: 1.4;
+        margin: 9px 0;
       }
 
       #viewerDataMonitor .vdm-reset {
         width: 100%;
+        padding: 7px;
         border: 1px solid #475569;
-        border-radius: 7px;
-        padding: 6px;
+        border-radius: 6px;
         background: #1e293b;
-        color: #e2e8f0;
+        color: white;
+        font-size: 11px;
         cursor: pointer;
       }
 
-      #viewerDataMonitor.vdm-collapsed {
-        width: 42px;
-        height: 38px;
-      }
-
-      #viewerDataMonitor.vdm-collapsed .vdm-content {
-        display: none;
-      }
-
       @media(max-width:600px) {
+
         #viewerDataMonitor {
-          right: 8px;
-          bottom: 8px;
-          width: 190px;
+          top: 12px !important;
+          right: 91px !important;
+          width: 130px;
         }
 
-        #viewerDataMonitor .vdm-total {
-          font-size: 21px;
+        #viewerDataMonitor .vdm-summary {
+          min-height: 36px;
+          padding: 6px;
+          gap: 4px;
         }
+
+        #viewerDataMonitor .vdm-label {
+          font-size: 9px;
+        }
+
+        #viewerDataMonitor .vdm-summary strong {
+          font-size: 12px;
+        }
+
       }
 
     `;
 
     document.head.appendChild(style);
   }
+
+  /* ==========================================================
+     INITIALIZATION
+     ========================================================== */
 
   function enhanceCards() {
     cards().forEach(makeHandle);
@@ -560,9 +656,13 @@
   }
 
   function init() {
+    if (initialized) return true;
+
     grid = document.getElementById(GRID_ID);
 
     if (!grid) return false;
+
+    initialized = true;
 
     installStyles();
     createMonitor();
