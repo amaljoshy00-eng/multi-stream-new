@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -243,9 +244,7 @@
 
   <div class="top-bar">
     <h2>🔥 Advanced Multi Stream</h2>
-
     <input id="link" placeholder="Paste YouTube or Kick channel link">
-
     <button onclick="addStream()">Add</button>
 
     <h3>
@@ -1451,25 +1450,51 @@
         });
       });
 
+      // =====================================
+      // MORE MENU — FIXED OPEN/CLOSE BEHAVIOUR
+      // =====================================
+
       function closeMore() {
         document.body.classList.remove("more-open");
         moreButton.setAttribute("aria-expanded", "false");
       }
 
-      moreButton.addEventListener("click", function(event){
+      // Always start with the menu closed
+      closeMore();
+
+      // More button: toggle open and closed
+      moreButton.addEventListener("click", function(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        const open = document.body.classList.toggle("more-open");
+        const isOpen = document.body.classList.contains("more-open");
 
-        moreButton.setAttribute("aria-expanded", String(open));
+        if (isOpen) {
+          closeMore();
+        } else {
+          document.body.classList.add("more-open");
+          moreButton.setAttribute("aria-expanded", "true");
+        }
       });
 
-      morePanel.addEventListener("click", function(event){
+      // Keep clicks inside the panel from triggering outside-click handling
+      morePanel.addEventListener("click", function(event) {
         event.stopPropagation();
       });
 
-      document.addEventListener("click", closeMore);
+      // Close when clicking outside the More menu
+      document.addEventListener("click", function(event) {
+        if (!moreRoot.contains(event.target)) {
+          closeMore();
+        }
+      });
+
+      // Close using Escape key
+      document.addEventListener("keydown", function(event) {
+        if (event.key === "Escape") {
+          closeMore();
+        }
+      });
 
       function fitStreamsToScreen() {
         if (window.innerWidth > 700) return;
