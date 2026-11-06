@@ -1,11 +1,15 @@
-/* MULTI STREAM HUB — ADMIN AUTHENTICATION */
+/* ==========================================================
+   MULTI STREAM HUB - ADMIN AUTHENTICATION
+   Firebase v8
+   ========================================================== */
+
 (function () {
   'use strict';
 
   const ADMIN_UID = 's3fgFVeKwyUDsKYjIJu8NPdGO7f2';
 
   const CONFIG = {
-    apiKey: 'AIzaSyBF8DDDrpXWG6OMu1dvmPHvuWl_UApEE-0',
+    apiKey: 'AIzaSyBTPrDoxWQdEWLLHsUuJbv6cQX1vUd6lQY',
     authDomain: 'multi-stream-ddb1d.firebaseapp.com',
     databaseURL: 'https://multi-stream-ddb1d-default-rtdb.firebaseio.com',
     projectId: 'multi-stream-ddb1d',
@@ -15,90 +19,31 @@
   let admin = false;
   let observerScheduled = false;
 
-  /* LOAD FIREBASE SCRIPTS */
+  /* ==========================================================
+     LOAD FIREBASE
+     ========================================================== */
+
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
 
       script.src = src;
+
       script.onload = resolve;
-      script.onerror = () => reject(
-        new Error('Failed to load Firebase: ' + src)
-      );
+      script.onerror = reject;
 
       document.head.appendChild(script);
     });
   }
 
-  /* CHECK ADMIN UID */
   function isAdmin(user) {
     return !!user && user.uid === ADMIN_UID;
   }
 
-  /* UPDATE HEADER */
-  function updateHeader() {
-    const loginButton = document.getElementById('hubAdminLogin');
+  /* ==========================================================
+     ADMIN UI
+     ========================================================== */
 
-    if (!loginButton) return;
-
-    let logoutButton = document.getElementById('hubAdminLogout');
-
-    const loginText = admin
-      ? '✓ Admin Logged In'
-      : '♙ Admin Login';
-
-    // Avoid unnecessary DOM changes.
-    if (loginButton.textContent.trim() !== loginText) {
-      loginButton.textContent = loginText;
-    }
-
-    loginButton.classList.toggle('admin-status-active', admin);
-
-    if (loginButton.hidden) {
-      loginButton.hidden = false;
-    }
-
-    /* ADMIN LOGOUT BUTTON */
-    if (admin) {
-
-      if (!logoutButton) {
-        logoutButton = document.createElement('button');
-
-        logoutButton.id = 'hubAdminLogout';
-        logoutButton.type = 'button';
-        logoutButton.textContent = '↪ Logout';
-
-        loginButton.parentNode.appendChild(logoutButton);
-
-        logoutButton.addEventListener('click', async function () {
-
-          if (!admin) return;
-
-          if (!confirm('Are you sure you want to log out?')) {
-            return;
-          }
-
-          try {
-            await firebase.auth().signOut();
-          } catch (error) {
-            alert('Logout failed: ' + error.message);
-          }
-
-        });
-      }
-
-      if (logoutButton.hidden) {
-        logoutButton.hidden = false;
-      }
-
-    } else if (logoutButton && !logoutButton.hidden) {
-
-      logoutButton.hidden = true;
-
-    }
-  }
-
-  /* ADMIN / VISITOR INTERFACE */
   function setAdminUI(value) {
     admin = value;
 
@@ -112,11 +57,7 @@
       !value
     );
 
-    updateHeader();
-
-    /* ADD STREAM CONTROLS */
     document.querySelectorAll('.top-bar').forEach(bar => {
-
       const input = bar.querySelector('#link');
 
       if (input) {
@@ -124,40 +65,139 @@
       }
 
       bar.querySelectorAll('button').forEach(button => {
-
-        if (/^add$/i.test(button.textContent.trim())) {
+        if (
+          /^add$/i.test(
+            button.textContent.trim()
+          )
+        ) {
           button.hidden = !value;
         }
-
       });
-
     });
 
-    /* ADMIN-ONLY ELEMENTS */
     document.querySelectorAll(
       '[data-admin-only], .delete-stream, .delete-button'
     ).forEach(element => {
-
       element.hidden = !value;
-
     });
 
-    /* DELETE BUTTONS */
-    document.querySelectorAll('.controls button').forEach(button => {
-
-      if (/^(x|✕|×|delete|remove)$/i.test(
-        button.textContent.trim()
-      )) {
+    document.querySelectorAll(
+      '.controls button'
+    ).forEach(button => {
+      if (
+        /^(x|delete|remove)$/i.test(
+          button.textContent.trim()
+        )
+      ) {
         button.hidden = !value;
       }
-
     });
+
+    updateHeader();
   }
 
-  /* ADMIN LOGIN MODAL */
-  function addAdminModal() {
+  function updateHeader() {
+    const loginButtons = document.querySelectorAll(
+      '#adminLoginButton, .admin-login-button'
+    );
 
-    if (document.getElementById('hubAdminModal')) return;
+    loginButtons.forEach(button => {
+      const text = admin
+        ? '✓ Admin Logged In'
+        : 'Admin Login';
+
+      if (button.textContent.trim() !== text) {
+        button.textContent = text;
+      }
+    });
+
+    let logoutButton = document.getElementById(
+      'adminLogoutButton'
+    );
+
+    if (admin && !logoutButton) {
+      logoutButton = document.createElement('button');
+
+      logoutButton.id = 'adminLogoutButton';
+      logoutButton.type = 'button';
+      logoutButton.textContent = 'Logout';
+
+      logoutButton.addEventListener('click', () => {
+        if (
+          confirm('Are you sure you want to sign out?')
+        ) {
+          firebase.auth().signOut();
+        }
+      });
+
+      const loginButton = document.querySelector(
+        '#adminLoginButton, .admin-login-button'
+      );
+
+      if (loginButton && loginButton.parentElement) {
+        loginButton.parentElement.appendChild(
+          logoutButton
+        );
+      } else {
+        document.body.appendChild(logoutButton);
+      }
+    }
+
+    if (logoutButton) {
+      logoutButton.hidden = !admin;
+    }
+  }
+
+  /* ==========================================================
+     LOGIN ERROR MESSAGES
+     ========================================================== */
+
+  function getLoginErrorMessage(error) {
+    const code = error.code || '';
+
+    if (
+      code === 'auth/user-not-found' ||
+      code === 'auth/invalid-email'
+    ) {
+      return 'Wrong username. Please check your email address.';
+    }
+
+    if (code === 'auth/wrong-password') {
+      return 'Wrong password. Please try again.';
+    }
+
+    if (code === 'auth/user-disabled') {
+      return 'This administrator account is disabled.';
+    }
+
+    if (
+      code === 'auth/invalid-credential' ||
+      code === 'auth/invalid-login-credentials'
+    ) {
+      return 'Wrong username or password.';
+    }
+
+    if (code === 'auth/too-many-requests') {
+      return 'Too many attempts. Please try again later.';
+    }
+
+    if (code === 'auth/network-request-failed') {
+      return 'Network error. Check your internet connection.';
+    }
+
+    return 'Login failed. Please try again.';
+  }
+
+  /* ==========================================================
+     LOGIN MODAL
+     ========================================================== */
+
+  function addAdminModal() {
+    if (
+      document.getElementById('hubAdminModal')
+    ) {
+      return;
+    }
 
     const modal = document.createElement('div');
 
@@ -166,20 +206,28 @@
     modal.innerHTML = `
       <div class="hub-auth-backdrop"></div>
 
-      <section class="hub-auth-box"
+      <section
+        class="hub-auth-box"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="hubAuthTitle">
+        aria-labelledby="hubAuthTitle"
+      >
 
-        <button class="hub-auth-close"
+        <button
+          class="hub-auth-close"
           type="button"
-          aria-label="Close">×</button>
+          aria-label="Close"
+        >×</button>
 
         <div class="hub-auth-mark">▶</div>
 
-        <h2 id="hubAuthTitle">Administrator Login</h2>
+        <h2 id="hubAuthTitle">
+          Administrator Login
+        </h2>
 
-        <p>Sign in with your authorized admin account.</p>
+        <p>
+          Sign in with your authorized admin account.
+        </p>
 
         <form id="hubAdminForm">
 
@@ -189,7 +237,8 @@
               id="hubAdminEmail"
               type="email"
               autocomplete="username"
-              required>
+              required
+            >
           </label>
 
           <label>
@@ -198,14 +247,22 @@
               id="hubAdminPassword"
               type="password"
               autocomplete="current-password"
-              required>
+              required
+            >
           </label>
 
-          <button class="hub-auth-submit" type="submit">
+          <button
+            class="hub-auth-submit"
+            type="submit"
+          >
             Sign in
           </button>
 
-          <div id="hubAuthMessage" role="status"></div>
+          <div
+            id="hubAuthMessage"
+            role="status"
+            aria-live="polite"
+          ></div>
 
         </form>
 
@@ -214,268 +271,273 @@
 
     document.body.appendChild(modal);
 
-    /* CLOSE BUTTON */
-    modal.querySelector('.hub-auth-close').addEventListener(
-      'click',
-      () => modal.remove()
-    );
+    const closeModal = () => modal.remove();
 
-    /* BACKDROP CLOSE */
-    modal.querySelector('.hub-auth-backdrop').addEventListener(
-      'click',
-      () => modal.remove()
-    );
+    modal.querySelector(
+      '.hub-auth-close'
+    ).addEventListener('click', closeModal);
 
-    /* LOGIN FORM */
-    modal.querySelector('#hubAdminForm')
-      .addEventListener('submit', async function (event) {
+    modal.querySelector(
+      '.hub-auth-backdrop'
+    ).addEventListener('click', closeModal);
 
-        event.preventDefault();
+    modal.querySelector(
+      '#hubAdminForm'
+    ).addEventListener('submit', async event => {
 
-        const msg = modal.querySelector('#hubAuthMessage');
+      event.preventDefault();
 
-        const email = modal.querySelector('#hubAdminEmail')
-          .value.trim();
+      const message = modal.querySelector(
+        '#hubAuthMessage'
+      );
 
-        const password = modal.querySelector('#hubAdminPassword')
-          .value;
+      const submitButton = modal.querySelector(
+        '.hub-auth-submit'
+      );
 
-        const submitButton = modal.querySelector(
-          '.hub-auth-submit'
-        );
+      const email = modal.querySelector(
+        '#hubAdminEmail'
+      ).value.trim();
 
-        msg.textContent = 'Signing in…';
+      const password = modal.querySelector(
+        '#hubAdminPassword'
+      ).value;
 
-        submitButton.disabled = true;
+      if (!email || !password) {
+        message.textContent =
+          'Please enter your email and password.';
+        return;
+      }
 
-        try {
+      message.textContent = 'Signing in…';
 
-          const result = await firebase.auth()
-            .signInWithEmailAndPassword(email, password);
+      submitButton.disabled = true;
 
-          if (!isAdmin(result.user)) {
+      try {
+        const result = await firebase
+          .auth()
+          .signInWithEmailAndPassword(
+            email,
+            password
+          );
 
-            await firebase.auth().signOut();
+        if (!isAdmin(result.user)) {
+          await firebase.auth().signOut();
 
-            throw new Error(
-              'This account is not authorized as the site administrator.'
-            );
+          message.textContent =
+            'Wrong username. This account is not the authorized administrator.';
 
-          }
+          submitButton.disabled = false;
 
-          modal.remove();
-
-          setAdminUI(true);
-
-          alert('Admin login successful.');
-
-        } catch (error) {
-
-          msg.textContent = error.message || 'Login failed.';
-
-        } finally {
-
-          if (submitButton.isConnected) {
-            submitButton.disabled = false;
-          }
-
+          return;
         }
 
-      });
+        setAdminUI(true);
 
+        modal.remove();
+
+        alert(
+          'Admin login successful. Stream management is now enabled.'
+        );
+
+      } catch (error) {
+
+        message.textContent =
+          getLoginErrorMessage(error);
+
+        submitButton.disabled = false;
+
+        console.error(
+          'Admin login failed:',
+          error.code || error.message
+        );
+      }
+    });
   }
 
-  /* OPEN LOGIN */
+  /* ==========================================================
+     LOGIN BUTTON
+     ========================================================== */
+
   window.openAdminLogin = function () {
 
-    if (admin) return;
+    if (admin) {
+      if (
+        confirm(
+          'You are signed in as administrator. Sign out?'
+        )
+      ) {
+        firebase.auth().signOut();
+      }
+
+      return;
+    }
 
     addAdminModal();
-
   };
 
-  /* PROTECT STREAM ACTIONS */
+  /* ==========================================================
+     PROTECT ADD / DELETE ACTIONS
+     ========================================================== */
+
   function protectActions() {
 
-    /* PROTECT ADD STREAM FUNCTION */
     if (
       typeof window.addStream === 'function' &&
       !window.addStream.__adminGuarded
     ) {
-
       const original = window.addStream;
 
       const guarded = function () {
-
         if (!admin) {
-
-          alert('Only the administrator can add streams.');
+          alert(
+            'Only the administrator can add streams.'
+          );
 
           return;
-
         }
 
         return original.apply(this, arguments);
-
       };
 
       guarded.__adminGuarded = true;
 
       window.addStream = guarded;
-
     }
 
-    /* PROTECT DELETE BUTTONS */
     if (!document.__hubDeleteGuard) {
 
-      document.addEventListener('click', function (event) {
+      document.addEventListener(
+        'click',
+        function (event) {
 
-        const target = event.target;
+          const button = event.target.closest(
+            'button'
+          );
 
-        if (!(target instanceof Element)) return;
+          if (!button) return;
 
-        const button = target.closest('button');
+          const label = button.textContent.trim();
 
-        if (!button) return;
+          const looksLikeDelete =
+            /^(x|✕|×|delete|remove)$/i.test(label) ||
+            /delete|remove/i.test(button.title || '') ||
+            button.classList.contains('delete-stream') ||
+            button.classList.contains('delete-button');
 
-        // Ignore authentication controls.
-        if (
-          button.closest('#hubAdminModal') ||
-          button.id === 'hubAdminLogin' ||
-          button.id === 'hubAdminLogout'
-        ) {
-          return;
-        }
+          if (looksLikeDelete && !admin) {
 
-        const label = button.textContent.trim();
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
 
-        const looksLikeDelete =
-          /^(x|✕|×|delete|remove)$/i.test(label) ||
-          /delete|remove/i.test(button.title || '') ||
-          button.classList.contains('delete-stream') ||
-          button.classList.contains('delete-button');
+            alert(
+              'Only the administrator can remove streams.'
+            );
+          }
 
-        if (looksLikeDelete && !admin) {
-
-          event.preventDefault();
-          event.stopPropagation();
-          event.stopImmediatePropagation();
-
-          alert('Only the administrator can remove streams.');
-
-        }
-
-      }, true);
+        },
+        true
+      );
 
       document.__hubDeleteGuard = true;
-
     }
 
     setAdminUI(admin);
-
   }
 
-  /* SAFER MUTATION OBSERVER */
-  function scheduleProtection() {
+  /* ==========================================================
+     SAFE MUTATION OBSERVER
+     ========================================================== */
 
+  function scheduleProtection() {
     if (observerScheduled) return;
 
     observerScheduled = true;
 
     requestAnimationFrame(() => {
-
       observerScheduled = false;
-
       protectActions();
-
     });
-
   }
 
-  /* INITIALIZE FIREBASE */
+  /* ==========================================================
+     START FIREBASE AUTHENTICATION
+     ========================================================== */
+
   async function start() {
 
     try {
 
-      /* FIREBASE APP SDK */
-      if (!window.firebase || !firebase.apps) {
-
+      if (
+        !window.firebase ||
+        !firebase.apps ||
+        !firebase.apps.length
+      ) {
         await loadScript(
           'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js'
         );
-
       }
 
-      /* FIREBASE AUTH SDK */
-      if (!firebase.auth) {
-
+      if (
+        !window.firebase ||
+        !firebase.auth
+      ) {
         await loadScript(
           'https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js'
         );
-
       }
 
-      /* INITIALIZE APP ONLY ONCE */
       if (!firebase.apps.length) {
-
         firebase.initializeApp(CONFIG);
-
       }
 
       const auth = firebase.auth();
 
-      /* KEEP ADMIN LOGIN PERSISTENT */
       await auth.setPersistence(
         firebase.auth.Auth.Persistence.LOCAL
       );
 
-      /* AUTHENTICATION STATE */
       auth.onAuthStateChanged(user => {
 
         setAdminUI(isAdmin(user));
-
-        protectActions();
-
-      });
-
-      /* INITIAL PROTECTION */
-      protectActions();
-
-      /*
-        Watch dynamically added stream elements.
-        Only child-list changes are observed.
-        Updates are coalesced into one animation frame.
-      */
-      const observer = new MutationObserver(() => {
 
         scheduleProtection();
 
       });
 
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
+      protectActions();
+
+      const observer = new MutationObserver(() => {
+        scheduleProtection();
       });
+
+      observer.observe(
+        document.body,
+        {
+          childList: true,
+          subtree: true
+        }
+      );
 
     } catch (error) {
 
       console.error(
-        'Admin authentication initialization failed:',
+        'Admin authentication could not initialize:',
         error
       );
 
       setAdminUI(false);
-
     }
-
   }
 
-  /* START AFTER PAGE LOAD */
   if (document.readyState === 'loading') {
 
-    document.addEventListener('DOMContentLoaded', start, {
-      once: true
-    });
+    document.addEventListener(
+      'DOMContentLoaded',
+      start,
+      { once: true }
+    );
 
   } else {
 
