@@ -344,3 +344,29 @@
     boot();
   }
 })();
+/* Load shared More menu on every page using stream-features.js */
+(() => {
+  'use strict';
+
+  // Prevent duplicate loading
+  if (window.multiStreamMoreLoaderStarted) return;
+  window.multiStreamMoreLoaderStarted = true;
+
+  // Load shared More menu CSS
+  if (!document.querySelector('link[data-multistream-more-css]')) {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'more.css';
+    css.setAttribute('data-multistream-more-css', 'true');
+    document.head.appendChild(css);
+  }
+
+  // Load shared More menu JavaScript
+  if (!document.querySelector('script[data-multistream-more-js]')) {
+    const script = document.createElement('script');
+    script.src = 'more.js';
+    script.defer = true;
+    script.setAttribute('data-multistream-more-js', 'true');
+    document.body.appendChild(script);
+  }
+})();
