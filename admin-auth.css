@@ -151,3 +151,46 @@
     font-size: 21px;
   }
 }
+/* ADMIN LOGIN STATUS */
+#hubAdminLogin.admin-status-active {
+  background: linear-gradient(135deg, #126b45, #159b62);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+#hubAdminLogout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 15px;
+  margin-left: 8px;
+  border: 1px solid rgba(255, 100, 100, 0.35);
+  border-radius: 10px;
+  background: rgba(220, 55, 55, 0.13);
+  color: #ff8585;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+#hubAdminLogout:hover {
+  background: #c93636;
+  color: #ffffff;
+}
+
+#hubAdminLogout[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 600px) {
+  #hubAdminLogout {
+    padding: 8px 10px;
+    margin-left: 5px;
+    font-size: 12px;
+  }
+
+  #hubAdminLogin {
+    font-size: 12px;
+  }
+}
