@@ -315,11 +315,6 @@
           Actual usage varies by quality and platform.
         </div>
 
-        <button
-          class="vdm-reset"
-          type="button"
-        >Reset estimate</button>
-
       </div>
     `;
 
@@ -344,13 +339,6 @@
           'aria-expanded',
           String(!collapsed)
         );
-      });
-
-    monitor
-      .querySelector('.vdm-reset')
-      .addEventListener('click', () => {
-        startedAt = Date.now();
-        refreshMonitor();
       });
 
     refreshMonitor();
@@ -439,9 +427,9 @@
       #viewerDataMonitor {
         position: fixed;
         z-index: 2147483000;
-        right: 12px;
-        bottom: 12px;
-        width: 214px;
+        top: 12px;
+        right: 105px;
+        width: 190px;
         color: #f8fafc;
         background: rgba(13,18,30,.94);
         border: 1px solid rgba(148,163,184,.35);
@@ -503,16 +491,6 @@
         margin: 8px 0;
       }
 
-      #viewerDataMonitor .vdm-reset {
-        width: 100%;
-        border: 1px solid #475569;
-        border-radius: 7px;
-        padding: 6px;
-        background: #1e293b;
-        color: #e2e8f0;
-        cursor: pointer;
-      }
-
       #viewerDataMonitor.vdm-collapsed {
         width: 42px;
         height: 38px;
@@ -524,9 +502,9 @@
 
       @media(max-width:600px) {
         #viewerDataMonitor {
-          right: 8px;
-          bottom: 8px;
-          width: 190px;
+          top: 8px;
+          right: 91px;
+          width: 170px;
         }
 
         #viewerDataMonitor .vdm-total {
