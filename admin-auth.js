@@ -1,6 +1,7 @@
+```javascript
 /* ==========================================================
    MULTI STREAM HUB - ADMIN AUTHENTICATION
-   Firebase v8
+   Firebase v8 - Corrected version
    ========================================================== */
 
 (function () {
@@ -8,8 +9,9 @@
 
   const ADMIN_UID = 's3fgFVeKwyUDsKYjIJu8NPdGO7f2';
 
+  // Matches the Firebase configuration in your HTML pages.
   const CONFIG = {
-    apiKey: 'AIzaSyBTPrDoxWQdEWLLHsUuJbv6cQX1vUd6lQY',
+    apiKey: 'AIzaSyBF8DDDrpXWG6OMu1dvmPHvuWl_UApEE-0',
     authDomain: 'multi-stream-ddb1d.firebaseapp.com',
     databaseURL: 'https://multi-stream-ddb1d-default-rtdb.firebaseio.com',
     projectId: 'multi-stream-ddb1d',
@@ -20,7 +22,7 @@
   let observerScheduled = false;
 
   /* ==========================================================
-     LOAD FIREBASE
+     LOAD FIREBASE AUTH
      ========================================================== */
 
   function loadScript(src) {
@@ -28,12 +30,31 @@
       const script = document.createElement('script');
 
       script.src = src;
-
       script.onload = resolve;
       script.onerror = reject;
 
       document.head.appendChild(script);
     });
+  }
+
+  async function ensureFirebaseAuth() {
+    if (!window.firebase) {
+      throw new Error('Firebase SDK is not loaded.');
+    }
+
+    if (!firebase.apps || !firebase.apps.length) {
+      firebase.initializeApp(CONFIG);
+    }
+
+    if (!firebase.auth) {
+      await loadScript(
+        'https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js'
+      );
+    }
+
+    if (!firebase.auth) {
+      throw new Error('Firebase Authentication failed to load.');
+    }
   }
 
   function isAdmin(user) {
@@ -66,9 +87,7 @@
 
       bar.querySelectorAll('button').forEach(button => {
         if (
-          /^add$/i.test(
-            button.textContent.trim()
-          )
+          /^add$/i.test(button.textContent.trim())
         ) {
           button.hidden = !value;
         }
@@ -97,18 +116,12 @@
   }
 
   function updateHeader() {
-    const loginButtons = document.querySelectorAll(
+    document.querySelectorAll(
       '#adminLoginButton, .admin-login-button'
-    );
-
-    loginButtons.forEach(button => {
-      const text = admin
+    ).forEach(button => {
+      button.textContent = admin
         ? '✓ Admin Logged In'
         : 'Admin Login';
-
-      if (button.textContent.trim() !== text) {
-        button.textContent = text;
-      }
     });
 
     let logoutButton = document.getElementById(
@@ -159,7 +172,7 @@
       code === 'auth/user-not-found' ||
       code === 'auth/invalid-email'
     ) {
-      return 'Wrong username. Please check your email address.';
+      return 'Wrong username. Check your email address.';
     }
 
     if (code === 'auth/wrong-password') {
@@ -178,19 +191,32 @@
     }
 
     if (code === 'auth/too-many-requests') {
-      return 'Too many attempts. Please try again later.';
+      return 'Too many attempts. Try again later.';
     }
 
     if (code === 'auth/network-request-failed') {
       return 'Network error. Check your internet connection.';
     }
 
-    return 'Login failed. Please try again.';
+    console.error('Firebase login error:', error);
+
+    return 'Login failed: ' +
+      (error.message || 'Please try again.');
   }
 
   /* ==========================================================
      LOGIN MODAL
      ========================================================== */
+
+  function closeAdminModal() {
+    const modal = document.getElementById(
+      'hubAdminModal'
+    );
+
+    if (modal) {
+      modal.remove();
+    }
+  }
 
   function addAdminModal() {
     if (
@@ -233,6 +259,7 @@
 
           <label>
             Email
+
             <input
               id="hubAdminEmail"
               type="email"
@@ -243,6 +270,7 @@
 
           <label>
             Password
+
             <input
               id="hubAdminPassword"
               type="password"
@@ -271,15 +299,22 @@
 
     document.body.appendChild(modal);
 
-    const closeModal = () => modal.remove();
-
+    // Close button works for everyone.
     modal.querySelector(
       '.hub-auth-close'
-    ).addEventListener('click', closeModal);
+    ).addEventListener('click', closeAdminModal);
 
+    // Clicking outside the login box closes it too.
     modal.querySelector(
       '.hub-auth-backdrop'
-    ).addEventListener('click', closeModal);
+    ).addEventListener('click', closeAdminModal);
+
+    // Escape key closes the modal.
+    modal.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        closeAdminModal();
+      }
+    });
 
     modal.querySelector(
       '#hubAdminForm'
@@ -305,15 +340,17 @@
 
       if (!email || !password) {
         message.textContent =
-          'Please enter your email and password.';
+          'Enter your email and password.';
+
         return;
       }
 
-      message.textContent = 'Signing in…';
+      message.textContent = 'Signing in...';
 
       submitButton.disabled = true;
 
       try {
+
         const result = await firebase
           .auth()
           .signInWithEmailAndPassword(
@@ -322,10 +359,11 @@
           );
 
         if (!isAdmin(result.user)) {
+
           await firebase.auth().signOut();
 
           message.textContent =
-            'Wrong username. This account is not the authorized administrator.';
+            'This account is not authorized as the administrator.';
 
           submitButton.disabled = false;
 
@@ -334,10 +372,10 @@
 
         setAdminUI(true);
 
-        modal.remove();
+        closeAdminModal();
 
         alert(
-          'Admin login successful. Stream management is now enabled.'
+          'Admin login successful. Stream management is enabled.'
         );
 
       } catch (error) {
@@ -346,26 +384,19 @@
           getLoginErrorMessage(error);
 
         submitButton.disabled = false;
-
-        console.error(
-          'Admin login failed:',
-          error.code || error.message
-        );
       }
     });
   }
 
   /* ==========================================================
-     LOGIN BUTTON
+     OPEN ADMIN LOGIN
      ========================================================== */
 
   window.openAdminLogin = function () {
 
     if (admin) {
       if (
-        confirm(
-          'You are signed in as administrator. Sign out?'
-        )
+        confirm('Are you sure you want to sign out?')
       ) {
         firebase.auth().signOut();
       }
@@ -377,11 +408,10 @@
   };
 
   /* ==========================================================
-     PROTECT ADD / DELETE ACTIONS
+     ADD STREAM PROTECTION
      ========================================================== */
 
-  function protectActions() {
-
+  function protectAddAction() {
     if (
       typeof window.addStream === 'function' &&
       !window.addStream.__adminGuarded
@@ -389,6 +419,7 @@
       const original = window.addStream;
 
       const guarded = function () {
+
         if (!admin) {
           alert(
             'Only the administrator can add streams.'
@@ -404,46 +435,60 @@
 
       window.addStream = guarded;
     }
+  }
 
-    if (!document.__hubDeleteGuard) {
+  /* ==========================================================
+     DELETE PROTECTION
+     ========================================================== */
 
-      document.addEventListener(
-        'click',
-        function (event) {
+  function installDeleteProtection() {
 
-          const button = event.target.closest(
-            'button'
+    if (document.__hubDeleteGuard) return;
+
+    document.addEventListener(
+      'click',
+      function (event) {
+
+        const button = event.target.closest('button');
+
+        if (!button) return;
+
+        // IMPORTANT:
+        // Never treat login modal buttons as delete buttons.
+        if (button.closest('#hubAdminModal')) {
+          return;
+        }
+
+        const label = button.textContent.trim();
+
+        const looksLikeDelete =
+          /^(x|✕|×|delete|remove)$/i.test(label) ||
+          /delete|remove/i.test(button.title || '') ||
+          button.classList.contains('delete-stream') ||
+          button.classList.contains('delete-button');
+
+        if (looksLikeDelete && !admin) {
+
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+
+          alert(
+            'Only the administrator can remove streams.'
           );
+        }
 
-          if (!button) return;
+      },
+      true
+    );
 
-          const label = button.textContent.trim();
+    document.__hubDeleteGuard = true;
+  }
 
-          const looksLikeDelete =
-            /^(x|✕|×|delete|remove)$/i.test(label) ||
-            /delete|remove/i.test(button.title || '') ||
-            button.classList.contains('delete-stream') ||
-            button.classList.contains('delete-button');
-
-          if (looksLikeDelete && !admin) {
-
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-
-            alert(
-              'Only the administrator can remove streams.'
-            );
-          }
-
-        },
-        true
-      );
-
-      document.__hubDeleteGuard = true;
-    }
-
-    setAdminUI(admin);
+  function protectActions() {
+    protectAddAction();
+    installDeleteProtection();
+    updateHeader();
   }
 
   /* ==========================================================
@@ -457,40 +502,20 @@
 
     requestAnimationFrame(() => {
       observerScheduled = false;
+
       protectActions();
     });
   }
 
   /* ==========================================================
-     START FIREBASE AUTHENTICATION
+     INITIALIZATION
      ========================================================== */
 
   async function start() {
 
     try {
 
-      if (
-        !window.firebase ||
-        !firebase.apps ||
-        !firebase.apps.length
-      ) {
-        await loadScript(
-          'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js'
-        );
-      }
-
-      if (
-        !window.firebase ||
-        !firebase.auth
-      ) {
-        await loadScript(
-          'https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js'
-        );
-      }
-
-      if (!firebase.apps.length) {
-        firebase.initializeApp(CONFIG);
-      }
+      await ensureFirebaseAuth();
 
       const auth = firebase.auth();
 
@@ -523,7 +548,7 @@
     } catch (error) {
 
       console.error(
-        'Admin authentication could not initialize:',
+        'Admin authentication initialization failed:',
         error
       );
 
@@ -546,3 +571,4 @@
   }
 
 })();
+```
