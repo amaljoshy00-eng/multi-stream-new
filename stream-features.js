@@ -1,94 +1,96 @@
-/* Multi Stream Hub — Viewer Ordering + Estimated Data Monitor
-   Viewer ordering is stored locally. No Firebase data is modified.
+```javascript
+/* Multi Stream Hub — viewer stream ordering + estimated data usage
+   Estimated usage is a calculation, not a measurement of actual network traffic.
+   Viewer ordering and usage totals are stored locally on this device.
 */
-
 (() => {
   'use strict';
 
   const GRID_ID = 'grid';
-  const STORAGE_PREFIX = 'multiStreamViewerOrder:v1:';
+  const ORDER_PREFIX = 'multiStreamViewerOrder:v2:';
+  const USAGE_KEY = 'multiStreamEstimatedUsage:v1';
   const ESTIMATED_MBPS_PER_STREAM = 2;
-
-  const MB_PER_HOUR_PER_STREAM =
-    ESTIMATED_MBPS_PER_STREAM * 3600 / 8;
+  const MB_PER_SECOND_PER_STREAM = ESTIMATED_MBPS_PER_STREAM / 8;
 
   const pageKey = (() => {
-    const p = location.pathname.toLowerCase();
-
-    if (p.includes('gaming')) return 'gaming';
-    if (p.includes('sports')) return 'sports';
-    if (p.includes('music')) return 'music';
-    if (p.includes('news')) return 'news';
-
-    return p.split('/').pop() || 'streams';
+    const name = location.pathname.toLowerCase().split('/').pop() || 'streams';
+    return name.replace(/\.html?$/, '') || 'streams';
   })();
 
-  const storageKey = STORAGE_PREFIX + pageKey;
-
-  let grid;
-  let monitor;
-  let startedAt = Date.now();
+  const orderKey = ORDER_PREFIX + pageKey;
+  let grid = null;
+  let monitor = null;
   let dragged = null;
   let dragPointerId = null;
-  let suppressObserver = false;
-  let refreshQueued = false;
-
   let savedOrder = readOrder();
+  let lastUsageAt = Date.now();
+  let usageMB = readUsage();
+  let refreshQueued = false;
+  let observer = null;
 
   function readOrder() {
     try {
-      const value = JSON.parse(
-        localStorage.getItem(storageKey) || '[]'
-      );
-
+      const value = JSON.parse(localStorage.getItem(orderKey) || '[]');
       return Array.isArray(value) ? value : [];
-    } catch (_) {
-      return [];
-    }
+    } catch (_) { return []; }
   }
 
-  function cardId(card) {
-    const player = card.querySelector('.player[id]');
+  function readUsage() {
+    try {
+      const data = JSON.parse(localStorage.getItem(USAGE_KEY) || '{}');
+      return Number.isFinite(data.totalMB) ? data.totalMB : 0;
+    } catch (_) { return 0; }
+  }
 
-    return player
-      ? player.id.replace(/^player-/, '')
-      : '';
+  function writeUsage() {
+    try {
+      localStorage.setItem(USAGE_KEY, JSON.stringify({
+        totalMB: usageMB,
+        updatedAt: Date.now()
+      }));
+    } catch (_) {}
+  }
+
+  function streamCount() {
+    return grid ? Array.from(grid.children).filter(el =>
+      el.classList.contains('card') &&
+      getComputedStyle(el).display !== 'none'
+    ).length : 0;
+  }
+
+  function updateUsage() {
+    const now = Date.now();
+    const elapsedSeconds = Math.max(0, (now - lastUsageAt) / 1000);
+    usageMB += elapsedSeconds * streamCount() * MB_PER_SECOND_PER_STREAM;
+    lastUsageAt = now;
+    writeUsage();
+  }
+
+  function formatData(mb) {
+    if (mb >= 1024) return (mb / 1024).toFixed(2) + ' GB';
+    return mb.toFixed(1) + ' MB';
+  }
+
+  function getCardId(card) {
+    const player = card.querySelector('.player[id]');
+    return player ? player.id.replace(/^player-/, '') : '';
   }
 
   function cards() {
-    if (!grid) return [];
-
-    return Array.from(grid.children).filter(
-      element => element.classList.contains('card')
-    );
+    return grid ? Array.from(grid.children).filter(el =>
+      el.classList.contains('card')
+    ) : [];
   }
 
   function saveOrder() {
-    const ids = cards()
-      .map(cardId)
-      .filter(Boolean);
-
-    try {
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify(ids)
-      );
-    } catch (_) {}
-
-    savedOrder = ids;
+    savedOrder = cards().map(getCardId).filter(Boolean);
+    try { localStorage.setItem(orderKey, JSON.stringify(savedOrder)); } catch (_) {}
   }
 
   function applyOrder() {
     if (!grid || !savedOrder.length) return;
-
     const current = cards();
-
-    if (current.length < 2) return;
-
-    const byId = new Map(
-      current.map(card => [cardId(card), card])
-    );
-
+    const byId = new Map(current.map(card => [getCardId(card), card]));
     const ordered = [];
 
     savedOrder.forEach(id => {
@@ -97,520 +99,248 @@
         byId.delete(id);
       }
     });
-
     current.forEach(card => {
-      const id = cardId(card);
-
+      const id = getCardId(card);
       if (byId.has(id)) {
         ordered.push(card);
         byId.delete(id);
       }
     });
 
-    if (
-      ordered.every(
-        (card, index) => current[index] === card
-      )
-    ) return;
-
-    suppressObserver = true;
-
-    ordered.forEach(card => {
-      grid.appendChild(card);
-    });
-
-    requestAnimationFrame(() => {
-      suppressObserver = false;
-    });
+    if (ordered.length !== current.length) return;
+    ordered.forEach(card => grid.appendChild(card));
   }
 
-  function makeHandle(card) {
-    if (
-      card.querySelector(
-        ':scope > .viewer-drag-handle'
-      )
-    ) return;
-
+  function addDragHandle(card) {
+    if (card.querySelector(':scope > .viewer-drag-handle')) return;
     const handle = document.createElement('button');
-
     handle.type = 'button';
     handle.className = 'viewer-drag-handle';
     handle.textContent = '⠿';
-    handle.title =
-      'Drag to rearrange streams (only on this device)';
-
-    handle.setAttribute(
-      'aria-label',
-      'Drag to rearrange this stream'
-    );
-
+    handle.title = 'Drag to rearrange streams on this device';
+    handle.setAttribute('aria-label', 'Drag to rearrange stream');
     card.appendChild(handle);
   }
 
   function nearestCard(x, y) {
-    const candidates = cards().filter(
-      card => card !== dragged
-    );
-
     let best = null;
     let bestDistance = Infinity;
-    let before = false;
+    let insertBefore = false;
 
-    for (const card of candidates) {
+    cards().filter(card => card !== dragged).forEach(card => {
       const rect = card.getBoundingClientRect();
-
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
-
       const distance = Math.hypot(
         (x - cx) / Math.max(1, rect.width),
         (y - cy) / Math.max(1, rect.height)
       );
-
       if (distance < bestDistance) {
         bestDistance = distance;
         best = card;
-
-        before =
-          y < cy ||
-          (
-            Math.abs(y - cy) < rect.height * 0.25 &&
-            x < cx
-          );
+        insertBefore = y < cy || (Math.abs(y - cy) < rect.height * .2 && x < cx);
       }
-    }
+    });
 
-    return best ? { card: best, before } : null;
+    return best ? { card: best, insertBefore } : null;
   }
 
-  function onPointerDown(event) {
-    const handle = event.target.closest(
-      '.viewer-drag-handle'
-    );
-
+  function pointerDown(event) {
+    const handle = event.target.closest('.viewer-drag-handle');
     if (!handle || !grid) return;
-
     const card = handle.closest('.card');
-
     if (!card) return;
 
     event.preventDefault();
-
     dragged = card;
     dragPointerId = event.pointerId;
-
-    handle.setPointerCapture?.(event.pointerId);
-
+    try { handle.setPointerCapture(event.pointerId); } catch (_) {}
     card.classList.add('viewer-dragging');
-
-    document.body.classList.add(
-      'viewer-reordering'
-    );
+    document.body.classList.add('viewer-reordering');
   }
 
-  function onPointerMove(event) {
-    if (
-      !dragged ||
-      event.pointerId !== dragPointerId
-    ) return;
-
+  function pointerMove(event) {
+    if (!dragged || event.pointerId !== dragPointerId) return;
     event.preventDefault();
 
-    const target = nearestCard(
-      event.clientX,
-      event.clientY
-    );
-
+    const target = nearestCard(event.clientX, event.clientY);
     if (!target) return;
 
-    const targetCard = target.card;
-
-    if (target.before) {
-      if (dragged.nextElementSibling !== targetCard) {
-        grid.insertBefore(dragged, targetCard);
+    if (target.insertBefore) {
+      if (dragged.nextElementSibling !== target.card) {
+        grid.insertBefore(dragged, target.card);
       }
-    } else {
-      if (targetCard.nextElementSibling !== dragged) {
-        grid.insertBefore(
-          dragged,
-          targetCard.nextElementSibling
-        );
-      }
+    } else if (target.card.nextElementSibling !== dragged) {
+      grid.insertBefore(dragged, target.card.nextElementSibling);
     }
   }
 
-  function endDrag(event) {
-    if (!dragged) return;
-
-    if (
-      event &&
-      event.pointerId !== dragPointerId
-    ) return;
-
-    dragged.classList.remove(
-      'viewer-dragging'
-    );
-
+  function pointerEnd(event) {
+    if (!dragged || (event && event.pointerId !== dragPointerId)) return;
+    dragged.classList.remove('viewer-dragging');
     dragged = null;
     dragPointerId = null;
-
-    document.body.classList.remove(
-      'viewer-reordering'
-    );
-
+    document.body.classList.remove('viewer-reordering');
     saveOrder();
-    refreshMonitor();
-  }
-
-  function formatBytes(mb) {
-    if (mb >= 1024) {
-      return (mb / 1024).toFixed(2) + ' GB';
-    }
-
-    return mb.toFixed(1) + ' MB';
-  }
-
-  function createMonitor() {
-    if (
-      document.getElementById(
-        'viewerDataMonitor'
-      )
-    ) return;
-
-    monitor = document.createElement('section');
-
-    monitor.id = 'viewerDataMonitor';
-
-    monitor.innerHTML = `
-      <button
-        class="vdm-toggle"
-        type="button"
-        aria-expanded="true"
-        title="Collapse data monitor"
-      >▾</button>
-
-      <div class="vdm-content">
-
-        <div class="vdm-heading">
-          DATA USAGE <span>EST.</span>
-        </div>
-
-        <div
-          class="vdm-total"
-          id="vdmTotal"
-        >0 MB</div>
-
-        <div class="vdm-row">
-          <span>Hourly estimate</span>
-          <strong id="vdmHourly">0 MB/h</strong>
-        </div>
-
-        <div class="vdm-row">
-          <span>Loaded streams</span>
-          <strong id="vdmCount">0</strong>
-        </div>
-
-        <div class="vdm-note">
-          Approx. 2 Mbps per stream.
-          Actual usage varies by quality and platform.
-        </div>
-
-      </div>
-    `;
-
-    document.body.appendChild(monitor);
-
-    monitor
-      .querySelector('.vdm-toggle')
-      .addEventListener('click', () => {
-
-        const collapsed =
-          monitor.classList.toggle(
-            'vdm-collapsed'
-          );
-
-        monitor.querySelector(
-          '.vdm-toggle'
-        ).textContent = collapsed ? '▴' : '▾';
-
-        monitor.querySelector(
-          '.vdm-toggle'
-        ).setAttribute(
-          'aria-expanded',
-          String(!collapsed)
-        );
-      });
-
-    refreshMonitor();
-  }
-
-  function refreshMonitor() {
-    if (!monitor || !grid) return;
-
-    const count = cards().length;
-
-    const elapsedHours = Math.max(
-      0,
-      (Date.now() - startedAt) / 3600000
-    );
-
-    const hourlyMB =
-      count * MB_PER_HOUR_PER_STREAM;
-
-    const consumedMB =
-      hourlyMB * elapsedHours;
-
-    monitor.querySelector(
-      '#vdmTotal'
-    ).textContent = formatBytes(consumedMB);
-
-    monitor.querySelector(
-      '#vdmHourly'
-    ).textContent =
-      formatBytes(hourlyMB) + '/h';
-
-    monitor.querySelector(
-      '#vdmCount'
-    ).textContent = String(count);
+    updateMonitor();
   }
 
   function installStyles() {
-    if (
-      document.getElementById(
-        'viewerFeaturesStyles'
-      )
-    ) return;
-
+    if (document.getElementById('viewerFeaturesStyles')) return;
     const style = document.createElement('style');
-
     style.id = 'viewerFeaturesStyles';
-
     style.textContent = `
-
-      #grid > .card {
-        position: relative;
-      }
-
+      #grid > .card { position:relative; }
       .viewer-drag-handle {
-        position: absolute;
-        z-index: 30;
-        top: 8px;
-        left: 8px;
-        width: 32px;
-        height: 32px;
-        border: 1px solid rgba(255,255,255,.24);
-        border-radius: 9px;
-        background: rgba(10,14,24,.82);
-        color: #fff;
-        font-size: 21px;
-        line-height: 1;
-        cursor: grab;
-        touch-action: none;
-        user-select: none;
-        box-shadow: 0 2px 10px #0005;
+        position:absolute; z-index:30; top:8px; left:8px;
+        width:32px; height:32px; border:1px solid #ffffff40;
+        border-radius:9px; background:#0a0e18d9; color:#fff;
+        font-size:21px; cursor:grab; touch-action:none;
       }
-
-      .viewer-drag-handle:active {
-        cursor: grabbing;
-      }
-
-      .viewer-dragging {
-        opacity: .55 !important;
-        outline: 2px dashed #60a5fa !important;
-      }
-
-      body.viewer-reordering,
-      body.viewer-reordering * {
-        user-select: none !important;
-      }
+      .viewer-dragging { opacity:.55 !important; outline:2px dashed #60a5fa !important; }
+      body.viewer-reordering, body.viewer-reordering * { user-select:none !important; }
 
       #viewerDataMonitor {
-        position: fixed;
-        z-index: 2147483000;
-        top: 12px;
-        right: 105px;
-        width: 190px;
-        color: #f8fafc;
-        background: rgba(13,18,30,.94);
-        border: 1px solid rgba(148,163,184,.35);
-        border-radius: 13px;
-        box-shadow: 0 8px 28px #0008;
-        font: 12px/1.4 Arial,sans-serif;
-        backdrop-filter: blur(12px);
+        position:fixed; z-index:2147483002; top:12px; right:112px;
+        width:auto; min-width:108px; max-width:185px; box-sizing:border-box;
+        color:#f8fafc; background:rgba(13,18,30,.96);
+        border:1px solid rgba(148,163,184,.38); border-radius:11px;
+        box-shadow:0 6px 22px #0007; font:12px/1.35 Arial,sans-serif;
+        backdrop-filter:blur(12px); overflow:hidden;
       }
-
-      #viewerDataMonitor .vdm-toggle {
-        position: absolute;
-        top: 6px;
-        right: 7px;
-        border: 0;
-        background: transparent;
-        color: #fff;
-        font-size: 17px;
-        cursor: pointer;
-        padding: 2px 7px;
+      #viewerDataMonitor .vdm-head {
+        display:flex; align-items:center; gap:7px; padding:8px 9px;
       }
-
-      #viewerDataMonitor .vdm-content {
-        padding: 12px 13px 11px;
+      #viewerDataMonitor .vdm-label {
+        color:#aab8cc; font-size:9px; font-weight:700; letter-spacing:1px;
+        white-space:nowrap;
       }
-
-      #viewerDataMonitor .vdm-heading {
-        color: #aab8cc;
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 1.2px;
-      }
-
-      #viewerDataMonitor .vdm-heading span {
-        color: #7dd3fc;
-        margin-left: 5px;
-      }
-
       #viewerDataMonitor .vdm-total {
-        font-size: 24px;
-        font-weight: 700;
-        margin: 3px 0 7px;
+        color:#fff; font-size:15px; font-weight:800; white-space:nowrap;
       }
-
+      #viewerDataMonitor .vdm-toggle {
+        margin-left:auto; padding:0 2px; border:0; background:transparent;
+        color:#fff; font-size:15px; cursor:pointer; line-height:1;
+      }
+      #viewerDataMonitor .vdm-details {
+        display:none; padding:0 10px 10px; border-top:1px solid #ffffff16;
+      }
+      #viewerDataMonitor.vdm-expanded .vdm-details { display:block; }
       #viewerDataMonitor .vdm-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 8px;
-        color: #cbd5e1;
-        margin: 4px 0;
+        display:flex; justify-content:space-between; gap:12px;
+        margin-top:7px; color:#cbd5e1; font-size:11px;
       }
-
-      #viewerDataMonitor .vdm-row strong {
-        color: #fff;
-      }
-
+      #viewerDataMonitor .vdm-row strong { color:#fff; white-space:nowrap; }
       #viewerDataMonitor .vdm-note {
-        color: #94a3b8;
-        font-size: 10px;
-        margin: 8px 0;
+        margin-top:8px; color:#94a3b8; font-size:9px; line-height:1.35;
       }
-
-      #viewerDataMonitor.vdm-collapsed {
-        width: 42px;
-        height: 38px;
+      @media(max-width:700px) {
+        #viewerDataMonitor { top:7px; right:92px; min-width:94px; max-width:150px; }
+        #viewerDataMonitor .vdm-head { padding:7px 8px; gap:6px; }
+        #viewerDataMonitor .vdm-total { font-size:14px; }
       }
-
-      #viewerDataMonitor.vdm-collapsed .vdm-content {
-        display: none;
-      }
-
-      @media(max-width:600px) {
-        #viewerDataMonitor {
-          top: 8px;
-          right: 91px;
-          width: 170px;
-        }
-
-        #viewerDataMonitor .vdm-total {
-          font-size: 21px;
-        }
-      }
-
     `;
-
     document.head.appendChild(style);
   }
 
-  function enhanceCards() {
-    cards().forEach(makeHandle);
+  function createMonitor() {
+    if (document.getElementById('viewerDataMonitor')) {
+      monitor = document.getElementById('viewerDataMonitor');
+      return;
+    }
+
+    monitor = document.createElement('section');
+    monitor.id = 'viewerDataMonitor';
+    // Start minimized on every page entry.
+    monitor.innerHTML = `
+      <div class="vdm-head">
+        <span class="vdm-label">DATA</span>
+        <strong class="vdm-total" id="vdmTotal">0 MB</strong>
+        <button class="vdm-toggle" type="button"
+          aria-label="Show data usage details" aria-expanded="false">▾</button>
+      </div>
+      <div class="vdm-details">
+        <div class="vdm-row"><span>Estimated total</span><strong id="vdmTotalDetail">0 MB</strong></div>
+        <div class="vdm-row"><span>Hourly estimate</span><strong id="vdmHourly">0 MB/h</strong></div>
+        <div class="vdm-row"><span>Active streams</span><strong id="vdmCount">0</strong></div>
+        <div class="vdm-note">Estimate only: assumes about 2 Mbps per visible stream. Actual network usage may differ.</div>
+      </div>
+    `;
+    document.body.appendChild(monitor);
+
+    monitor.querySelector('.vdm-toggle').addEventListener('click', () => {
+      const expanded = monitor.classList.toggle('vdm-expanded');
+      const button = monitor.querySelector('.vdm-toggle');
+      button.textContent = expanded ? '▴' : '▾';
+      button.setAttribute('aria-expanded', String(expanded));
+      button.setAttribute(
+        'aria-label',
+        expanded ? 'Hide data usage details' : 'Show data usage details'
+      );
+    });
+  }
+
+  function updateMonitor() {
+    if (!monitor || !grid) return;
+    updateUsage();
+    const count = streamCount();
+    const total = formatData(usageMB);
+    const hourly = formatData(count * MB_PER_SECOND_PER_STREAM * 3600) + '/h';
+
+    monitor.querySelector('#vdmTotal').textContent = total;
+    monitor.querySelector('#vdmTotalDetail').textContent = total;
+    monitor.querySelector('#vdmHourly').textContent = hourly;
+    monitor.querySelector('#vdmCount').textContent = String(count);
   }
 
   function scheduleRefresh() {
     if (refreshQueued) return;
-
     refreshQueued = true;
-
     requestAnimationFrame(() => {
       refreshQueued = false;
-
-      if (!grid) return;
-
-      enhanceCards();
-      applyOrder();
-      refreshMonitor();
+      cards().forEach(addDragHandle);
+      updateMonitor();
     });
   }
 
   function init() {
     grid = document.getElementById(GRID_ID);
-
     if (!grid) return false;
 
     installStyles();
     createMonitor();
-    enhanceCards();
+    cards().forEach(addDragHandle);
     applyOrder();
-    refreshMonitor();
+    updateMonitor();
 
-    grid.addEventListener(
-      'pointerdown',
-      onPointerDown,
-      { passive: false }
-    );
+    grid.addEventListener('pointerdown', pointerDown, { passive:false });
+    document.addEventListener('pointermove', pointerMove, { passive:false });
+    document.addEventListener('pointerup', pointerEnd);
+    document.addEventListener('pointercancel', pointerEnd);
 
-    document.addEventListener(
-      'pointermove',
-      onPointerMove,
-      { passive: false }
-    );
+    observer = new MutationObserver(scheduleRefresh);
+    observer.observe(grid, { childList:true });
 
-    document.addEventListener(
-      'pointerup',
-      endDrag
-    );
-
-    document.addEventListener(
-      'pointercancel',
-      endDrag
-    );
-
-    const observer = new MutationObserver(() => {
-      if (!suppressObserver) {
-        scheduleRefresh();
-      }
+    window.addEventListener('pagehide', () => {
+      updateUsage();
+      writeUsage();
     });
 
-    observer.observe(grid, {
-      childList: true
-    });
-
-    setInterval(refreshMonitor, 1000);
-
+    setInterval(updateMonitor, 1000);
     return true;
   }
 
   function boot() {
     if (init()) return;
-
     const wait = new MutationObserver(() => {
-      if (init()) {
-        wait.disconnect();
-      }
+      if (init()) wait.disconnect();
     });
-
-    wait.observe(
-      document.documentElement,
-      {
-        childList: true,
-        subtree: true
-      }
-    );
+    wait.observe(document.documentElement, { childList:true, subtree:true });
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener(
-      'DOMContentLoaded',
-      boot,
-      { once: true }
-    );
+    document.addEventListener('DOMContentLoaded', boot, { once:true });
   } else {
     boot();
   }
-
 })();
